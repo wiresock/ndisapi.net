@@ -8,11 +8,11 @@
 // ----------------------------------------------
 
 
+using NdisApiDotNet.Native;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using NdisApiDotNet.Native;
 
 namespace NdisApiDotNet
 {
@@ -37,13 +37,11 @@ namespace NdisApiDotNet
         {
             lock (_lock)
             {
-                if (_isDisposed)
-                    return;
-
+                if (_isDisposed) return;
 
                 if (_ptrToGcHandles != null)
                 {
-                    foreach (var gcHandle in _ptrToGcHandles.Values)
+                    foreach (GCHandle gcHandle in _ptrToGcHandles.Values)
                         gcHandle.Free();
 
                     _ptrToGcHandles = null;
@@ -61,9 +59,9 @@ namespace NdisApiDotNet
         /// <returns><see cref="IntPtr" />.</returns>
         internal IntPtr AllocateArray(int count)
         {
-            var array = new T[count];
-            var gcHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            var ptr = gcHandle.AddrOfPinnedObject();
+            T[] array = new T[count];
+            GCHandle gcHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
+            IntPtr ptr = gcHandle.AddrOfPinnedObject();
 
             Kernel32.ZeroMemory(ptr, count);
 
@@ -84,10 +82,8 @@ namespace NdisApiDotNet
         {
             lock (_lock)
             {
-                var array = _ptrToGcHandles.FirstOrDefault(x => x.Key == arrayPointer);
-                if (array.Equals(default))
-                    return;
-
+                KeyValuePair<IntPtr, GCHandle> array = _ptrToGcHandles.FirstOrDefault(x => x.Key == arrayPointer);
+                if (array.Equals(default)) return;
 
                 array.Value.Free();
                 _ptrToGcHandles.Remove(arrayPointer);

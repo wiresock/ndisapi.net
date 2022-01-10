@@ -8,10 +8,10 @@
 // ----------------------------------------------
 
 
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Runtime.InteropServices;
 using System.Security;
-using Microsoft.Win32.SafeHandles;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
@@ -26,22 +26,22 @@ namespace NdisApiDotNet.Native
 
         static unsafe NdisApi()
         {
-            NdisRdEthPacketSize = Marshal.SizeOf(typeof(NDISRD_ETH_Packet));
+            NdisRdEthPacketSize = Marshal.SizeOf(typeof(EthPacket));
 
-            EthMRequestUSize = Marshal.SizeOf(typeof(ETH_M_REQUEST_U));
-            EthMRequestUEthPacketOffset = (int)Marshal.OffsetOf(typeof(ETH_M_REQUEST_U), nameof(ETH_M_REQUEST_U._ethPacket));
+            EthMRequestUSize = Marshal.SizeOf(typeof(EthMRequestUnsafe));
+            EthMRequestUEthPacketOffset = (int)Marshal.OffsetOf(typeof(EthMRequestUnsafe), nameof(EthMRequestUnsafe._ethPacket));
 
-            StaticFilterUSize = Marshal.SizeOf(typeof(STATIC_FILTER_U));
-            StaticFilterTableUSize = Marshal.SizeOf(typeof(STATIC_FILTER_TABLE_U));
-            StaticFilterTableUStaticFiltersOffset = (int)Marshal.OffsetOf(typeof(STATIC_FILTER_TABLE_U), nameof(STATIC_FILTER_TABLE_U.m_StaticFilters));
+            StaticFilterUSize = Marshal.SizeOf(typeof(StaticFilterUnsafe));
+            StaticFilterTableUSize = Marshal.SizeOf(typeof(StaticFilterTableUnsafe));
+            StaticFilterTableUStaticFiltersOffset = (int)Marshal.OffsetOf(typeof(StaticFilterTableUnsafe), nameof(StaticFilterTableUnsafe.m_StaticFilters));
 
-            PacketOidDataSize = Marshal.SizeOf(typeof(PACKET_OID_DATA));
-            PacketOidDataDataOffset = (int)Marshal.OffsetOf(typeof(PACKET_OID_DATA), nameof(PACKET_OID_DATA._data));
+            PacketOidDataSize = Marshal.SizeOf(typeof(PacketOID));
+            PacketOidDataDataOffset = (int)Marshal.OffsetOf(typeof(PacketOID), nameof(PacketOID._data));
 
-            IntermediateBufferSize = Marshal.SizeOf(typeof(INTERMEDIATE_BUFFER));
-            IntermediateBufferBufferOffset = (int)Marshal.OffsetOf(typeof(INTERMEDIATE_BUFFER), nameof(INTERMEDIATE_BUFFER.m_IBuffer));
+            IntermediateBufferSize = Marshal.SizeOf(typeof(IntermediateBuffer));
+            IntermediateBufferBufferOffset = (int)Marshal.OffsetOf(typeof(IntermediateBuffer), nameof(IntermediateBuffer.m_IBuffer));
         }
-        
+
         #region Methods
 
         [DllImport(DllName)]
@@ -54,49 +54,49 @@ namespace NdisApiDotNet.Native
         public static extern uint GetDriverVersion(SafeFilterDriverHandle hOpen);
 
         [DllImport(DllName)]
-        public static extern bool GetTcpipBoundAdaptersInfo(SafeFilterDriverHandle hOpen, ref TCP_AdapterList adapters);
+        public static extern bool GetTcpipBoundAdaptersInfo(SafeFilterDriverHandle hOpen, ref TCPAdapterList adapters);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern bool SendPacketToMstcp(SafeFilterDriverHandle hOpen, ref ETH_REQUEST packet);
+        public static extern bool SendPacketToMstcp(SafeFilterDriverHandle hOpen, ref EthRequest packet);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern bool SendPacketToAdapter(SafeFilterDriverHandle hOpen, ref ETH_REQUEST packet);
+        public static extern bool SendPacketToAdapter(SafeFilterDriverHandle hOpen, ref EthRequest packet);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern bool ReadPacket(SafeFilterDriverHandle hOpen, ref ETH_REQUEST packet);
+        public static extern bool ReadPacket(SafeFilterDriverHandle hOpen, ref EthRequest packet);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern bool SendPacketsToMstcp(SafeFilterDriverHandle hOpen, ref ETH_M_REQUEST packets);
+        public static extern bool SendPacketsToMstcp(SafeFilterDriverHandle hOpen, ref EthMRequest packets);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern unsafe bool SendPacketsToMstcp(SafeFilterDriverHandle hOpen, ETH_M_REQUEST_U* packets);
+        public static extern unsafe bool SendPacketsToMstcp(SafeFilterDriverHandle hOpen, EthMRequestUnsafe* packets);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern bool SendPacketsToAdapter(SafeFilterDriverHandle hOpen, ref ETH_M_REQUEST packets);
+        public static extern bool SendPacketsToAdapter(SafeFilterDriverHandle hOpen, ref EthMRequest packets);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern unsafe bool SendPacketsToAdapter(SafeFilterDriverHandle hOpen, ETH_M_REQUEST_U* packets);
+        public static extern unsafe bool SendPacketsToAdapter(SafeFilterDriverHandle hOpen, EthMRequestUnsafe* packets);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern bool ReadPackets(SafeFilterDriverHandle hOpen, ref ETH_M_REQUEST packets);
+        public static extern bool ReadPackets(SafeFilterDriverHandle hOpen, ref EthMRequest packets);
 
         [DllImport(DllName)]
         [SuppressUnmanagedCodeSecurity]
-        public static extern unsafe bool ReadPackets(SafeFilterDriverHandle hOpen, ETH_M_REQUEST_U* packets);
+        public static extern unsafe bool ReadPackets(SafeFilterDriverHandle hOpen, EthMRequestUnsafe* packets);
 
         [DllImport(DllName)]
-        public static extern bool SetAdapterMode(SafeFilterDriverHandle hOpen, ref ADAPTER_MODE mode);
+        public static extern bool SetAdapterMode(SafeFilterDriverHandle hOpen, ref AdapterMode mode);
 
         [DllImport(DllName)]
-        public static extern bool GetAdapterMode(SafeFilterDriverHandle hOpen, ref ADAPTER_MODE mode);
+        public static extern bool GetAdapterMode(SafeFilterDriverHandle hOpen, ref AdapterMode mode);
 
         [DllImport(DllName)]
         public static extern bool FlushAdapterPacketQueue(SafeFilterDriverHandle hOpen, IntPtr hAdapter);
@@ -114,22 +114,22 @@ namespace NdisApiDotNet.Native
         public static extern bool SetAdapterListChangeEvent(SafeFilterDriverHandle hOpen, SafeWaitHandle hWin32Event);
 
         [DllImport(DllName)]
-        public static extern bool NdisrdRequest(SafeFilterDriverHandle hOpen, ref PACKET_OID_DATA oidData, bool set);
+        public static extern bool NdisrdRequest(SafeFilterDriverHandle hOpen, ref PacketOID oidData, bool set);
 
         [DllImport(DllName)]
         public static extern bool GetRasLinks(SafeFilterDriverHandle hOpen, IntPtr hAdapter, IntPtr pLinks);
 
         [DllImport(DllName)]
-        public static extern bool SetHwPacketFilter(SafeFilterDriverHandle hOpen, IntPtr hAdapter, NDIS_PACKET_TYPE filter);
+        public static extern bool SetHwPacketFilter(SafeFilterDriverHandle hOpen, IntPtr hAdapter, PacketType filter);
 
         [DllImport(DllName)]
-        public static extern bool GetHwPacketFilter(SafeFilterDriverHandle hOpen, IntPtr hAdapter, ref NDIS_PACKET_TYPE pFilter);
+        public static extern bool GetHwPacketFilter(SafeFilterDriverHandle hOpen, IntPtr hAdapter, ref PacketType pFilter);
 
         [DllImport(DllName)]
-        public static extern bool SetPacketFilterTable(SafeFilterDriverHandle hOpen, ref STATIC_FILTER_TABLE pFilterList);
+        public static extern bool SetPacketFilterTable(SafeFilterDriverHandle hOpen, ref StaticFilterTable pFilterList);
 
         [DllImport(DllName)]
-        public static extern unsafe bool SetPacketFilterTable(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE_U* pFilterList);
+        public static extern unsafe bool SetPacketFilterTable(SafeFilterDriverHandle hOpen, StaticFilterTableUnsafe* pFilterList);
 
         [DllImport(DllName)]
         public static extern bool ResetPacketFilterTable(SafeFilterDriverHandle hOpen);
@@ -138,16 +138,16 @@ namespace NdisApiDotNet.Native
         public static extern bool GetPacketFilterTableSize(SafeFilterDriverHandle hOpen, ref uint pdwTableSize);
 
         [DllImport(DllName)]
-        public static extern bool GetPacketFilterTable(SafeFilterDriverHandle hOpen, ref STATIC_FILTER_TABLE pFilterList);
+        public static extern bool GetPacketFilterTable(SafeFilterDriverHandle hOpen, ref StaticFilterTable pFilterList);
 
         [DllImport(DllName)]
-        public static extern unsafe bool GetPacketFilterTable(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE_U* pFilterList);
+        public static extern unsafe bool GetPacketFilterTable(SafeFilterDriverHandle hOpen, StaticFilterTableUnsafe* pFilterList);
 
         [DllImport(DllName)]
-        public static extern bool GetPacketFilterTableResetStats(SafeFilterDriverHandle hOpen, ref STATIC_FILTER_TABLE pFilterList);
+        public static extern bool GetPacketFilterTableResetStats(SafeFilterDriverHandle hOpen, ref StaticFilterTable pFilterList);
 
         [DllImport(DllName)]
-        public static extern unsafe bool GetPacketFilterTableResetStats(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE_U* pFilterList);
+        public static extern unsafe bool GetPacketFilterTableResetStats(SafeFilterDriverHandle hOpen, StaticFilterTableUnsafe* pFilterList);
 
         [DllImport(DllName)]
         public static extern uint GetMTUDecrement();
@@ -156,10 +156,10 @@ namespace NdisApiDotNet.Native
         public static extern bool SetMTUDecrement(uint dwMtuDecrement);
 
         [DllImport(DllName)]
-        public static extern MSTCP_FLAGS GetAdaptersStartupMode();
+        public static extern MSTCPFlags GetAdaptersStartupMode();
 
         [DllImport(DllName)]
-        public static extern bool SetAdaptersStartupMode(MSTCP_FLAGS dwStartupMode);
+        public static extern bool SetAdaptersStartupMode(MSTCPFlags dwStartupMode);
 
         [DllImport(DllName)]
         public static extern bool IsDriverLoaded(SafeFilterDriverHandle hOpen);
@@ -182,7 +182,7 @@ namespace NdisApiDotNet.Native
         /// <param name="src">The source.</param>
         /// <param name="dest">The dest.</param>
         /// <param name="size">The size.</param>
-        private static unsafe void MemoryCopy(void* src, void* dest, long size)
+        internal static unsafe void MemoryCopy(void* src, void* dest, long size)
         {
 #if NETSTANDARD2_0
             Buffer.MemoryCopy(src, dest, size, size);

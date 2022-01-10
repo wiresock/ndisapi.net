@@ -67,11 +67,10 @@ namespace NdisApiDotNet
         /// <exception cref="ArgumentException">Should not contain a path. - infFileName</exception>
         public bool Install(string infFileName, string componentId, out bool afterReboot, out uint errorCode)
         {
-            if (infFileName.Contains("\\") || infFileName.Contains("//"))
-                throw new ArgumentException("Should not contain a path.", nameof(infFileName));
+            if (infFileName.Contains("\\") || infFileName.Contains("//")) throw new ArgumentException("Should not contain a path.", nameof(infFileName));
 
 
-            var result = ExecuteCommand($"-v -l {infFileName} -c s -i {componentId}");
+            string result = ExecuteCommand($"-v -l {infFileName} -c s -i {componentId}");
             return ParseShowHrMessage(result, out afterReboot, out errorCode);
         }
 
@@ -84,7 +83,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if uninstalled, <c>false</c> otherwise.</returns>
         public bool Uninstall(string componentId, out bool afterReboot, out uint errorCode)
         {
-            var result = ExecuteCommand($"-v -u {componentId}");
+            string result = ExecuteCommand($"-v -u {componentId}");
             return ParseShowHrMessage(result, out afterReboot, out errorCode);
         }
 
@@ -101,11 +100,13 @@ namespace NdisApiDotNet
             {
                 if (result.IndexOf("Error code", StringComparison.OrdinalIgnoreCase) > -1)
                 {
-                    var hex = result.Substring(result.IndexOf("Error code:", StringComparison.OrdinalIgnoreCase) + 11).Trim().Replace("0x", String.Empty);
-                    errorCode = UInt32.Parse(hex, NumberStyles.AllowHexSpecifier);
+                    string hex = result.Substring(result.IndexOf("Error code:", StringComparison.OrdinalIgnoreCase) + 11).Trim().Replace("0x", string.Empty);
+                    errorCode = uint.Parse(hex, NumberStyles.AllowHexSpecifier);
                 }
                 else
+                {
                     errorCode = 0;
+                }
 
                 afterReboot = false;
                 return false;
@@ -121,10 +122,10 @@ namespace NdisApiDotNet
         /// Executes the command.
         /// </summary>
         /// <param name="command">The command.</param>
-        /// <returns><see cref="System.String" />.</returns>
+        /// <returns><see cref="string" />.</returns>
         private string ExecuteCommand(string command)
         {
-            var process = new Process
+            Process process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -137,8 +138,10 @@ namespace NdisApiDotNet
                 }
             };
             process.Start();
-            var result = process.StandardOutput.ReadToEnd();
+
+            string result = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
+
             return result;
         }
 
@@ -150,14 +153,15 @@ namespace NdisApiDotNet
         {
             try
             {
-                var fileName = Environment.Is64BitOperatingSystem ? "snetcfg.amd64.exe" : "snetcfg.i386.exe";
-                using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("NdisApiDotNet.Resources." + fileName))
+                string fileName = Environment.Is64BitOperatingSystem ? "snetcfg.amd64.exe" : "snetcfg.i386.exe";
+                using (Stream resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("NdisApiDotNet.Resources." + fileName))
                 {
                     if (resource != null)
                     {
-                        using (var file = new FileStream(path, FileMode.Create, FileAccess.Write))
+                        using (FileStream file = new FileStream(path, FileMode.Create, FileAccess.Write))
                         {
                             resource.CopyTo(file);
+
                             return true;
                         }
                     }
@@ -179,8 +183,7 @@ namespace NdisApiDotNet
         {
             try
             {
-                if (File.Exists(path))
-                    File.Delete(path);
+                if (File.Exists(path)) File.Delete(path);
             }
             catch (Exception)
             {

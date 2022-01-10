@@ -8,12 +8,12 @@
 // ----------------------------------------------
 
 
+using NdisApiDotNet.Native;
 using System;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using NdisApiDotNet.Native;
 
 namespace NdisApiDotNet
 {
@@ -27,7 +27,7 @@ namespace NdisApiDotNet
         /// <param name="medium">The medium.</param>
         /// <param name="address">The mac address.</param>
         /// <param name="mtu">The mtu.</param>
-        public NetworkAdapter(IntPtr handle, byte[] nameBytes, Native.NdisApi.NDIS_MEDIUM medium, byte[] address, ushort mtu)
+        public NetworkAdapter(IntPtr handle, byte[] nameBytes, NdisMedium medium, byte[] address, ushort mtu)
         {
             Handle = handle;
             Mtu = mtu;
@@ -53,7 +53,7 @@ namespace NdisApiDotNet
         /// <summary>
         /// Gets the packet event wait handle.
         /// </summary>
-        /// <remarks>This is only available on the instance that called <see cref="NdisApi"/>'s SetPacketEvent.</remarks>
+        /// <remarks>This is only available on the instance that called <see cref="NdisAPI"/>'s SetPacketEvent.</remarks>
         public WaitHandle WaitHandle { get; internal set; }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace NdisApiDotNet
         {
             get
             {
-                foreach (var b in PhysicalAddress.GetAddressBytes())
+                foreach (byte b in PhysicalAddress.GetAddressBytes())
                 {
                     if (b != 0)
                         return true;
@@ -76,7 +76,7 @@ namespace NdisApiDotNet
         /// <summary>
         /// Gets the medium of the TCP adapter.
         /// </summary>
-        public Native.NdisApi.NDIS_MEDIUM Medium { get; }
+        public NdisMedium Medium { get; }
 
         /// <summary>
         /// Gets the MTU of the network adapter.
@@ -104,8 +104,8 @@ namespace NdisApiDotNet
         /// <returns>System.String.</returns>
         private string GetInternalName()
         {
-            var name = Encoding.ASCII.GetString(NameBytes);
-            var i = name.IndexOf((char) 0);
+            string name = Encoding.ASCII.GetString(NameBytes);
+            int i = name.IndexOf((char)0);
             return i >= 0 ? name.Substring(0, i) : name;
         }
 
@@ -115,8 +115,8 @@ namespace NdisApiDotNet
         /// <returns>System.String.</returns>
         private string GetFriendlyName()
         {
-            var lpVersionInformation = new NtDll.OSVERSIONINFOEX();
-            lpVersionInformation.dwOSVersionInfoSize = (uint) Marshal.SizeOf(lpVersionInformation);
+            NtDll.OSVERSIONINFOEX lpVersionInformation = new NtDll.OSVERSIONINFOEX();
+            lpVersionInformation.dwOSVersionInfoSize = (uint)Marshal.SizeOf(lpVersionInformation);
             NtDll.RtlGetVersion(ref lpVersionInformation);
 
             return ConvertAdapterName(NameBytes, 0, lpVersionInformation.dwPlatformId, lpVersionInformation.dwMajorVersion);
@@ -129,14 +129,14 @@ namespace NdisApiDotNet
         /// <param name="nameStart">The start of the name.</param>
         /// <param name="platformId">The OS platform identifier.</param>
         /// <param name="majorVersion">The major OS version.</param>
-        /// <returns><see cref="System.String"/>.</returns>
+        /// <returns><see cref="string"/>.</returns>
         private static unsafe string ConvertAdapterName(byte[] adapterNameBytes, int nameStart, uint platformId, uint majorVersion)
         {
             fixed (byte* adapterNamePtr = &adapterNameBytes[nameStart])
             {
-                var friendlyNameBytes = new byte[Native.NdisApi.ADAPTER_NAME_SIZE];
+                byte[] friendlyNameBytes = new byte[NdisApi.ADAPTER_NAME_SIZE];
                 string friendlyName = null;
-                var success = false;
+                bool success = false;
 
                 fixed (byte* friendlyNameFixedBytes = friendlyNameBytes)
                 {
@@ -147,23 +147,23 @@ namespace NdisApiDotNet
                         if (majorVersion > 4)
                         {
                             // Windows 2000 or XP.
-                            success = Native.NdisApi.ConvertWindows2000AdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint) friendlyNameBytes.Length);
+                            success = NdisApi.ConvertWindows2000AdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
                         }
                         else if (majorVersion == 4)
                         {
                             // Windows NT 4.0.
-                            success = Native.NdisApi.ConvertWindowsNTAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint) friendlyNameBytes.Length);
+                            success = NdisApi.ConvertWindowsNTAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
                         }
                     }
                     else
                     {
                         // Windows 9x/ME.
-                        success = Native.NdisApi.ConvertWindows9xAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint) friendlyNameBytes.Length);
+                        success = NdisApi.ConvertWindows9xAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
                     }
 
                     if (success)
                     {
-                        var indexOfZero = 0;
+                        int indexOfZero = 0;
                         while (indexOfZero < 256 && friendlyNameBytes[indexOfZero] != 0)
                             ++indexOfZero;
                         friendlyName = Encoding.Default.GetString(friendlyNameBytes, 0, indexOfZero);

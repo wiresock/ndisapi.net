@@ -8,8 +8,8 @@
 // ----------------------------------------------
 
 
-using System.Runtime.InteropServices;
 using NdisApiDotNet.Native;
+using System.Runtime.InteropServices;
 
 namespace NdisApiDotNet
 {
@@ -21,7 +21,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if this OS is Windows Vista; otherwise, <c>false</c>.</returns>
         internal static bool IsWinVista()
         {
-            var osversioninfoex = GetVersion();
+            NtDll.OSVERSIONINFOEX osversioninfoex = GetVersion();
 
             return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 0;
         }
@@ -32,7 +32,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if this OS is Windows 7; otherwise, <c>false</c>.</returns>
         internal static bool IsWin7()
         {
-            var osversioninfoex = GetVersion();
+            NtDll.OSVERSIONINFOEX osversioninfoex = GetVersion();
 
             return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 1;
         }
@@ -43,7 +43,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if this OS is Windows 8; otherwise, <c>false</c>.</returns>
         internal static bool IsWin8()
         {
-            var osversioninfoex = GetVersion();
+            NtDll.OSVERSIONINFOEX osversioninfoex = GetVersion();
 
             return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 2;
         }
@@ -54,7 +54,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if this OS is Windows 8.1; otherwise, <c>false</c>.</returns>
         internal static bool IsWin81()
         {
-            var osversioninfoex = GetVersion();
+            NtDll.OSVERSIONINFOEX osversioninfoex = GetVersion();
 
             return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 3;
         }
@@ -65,7 +65,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if this OS is Windows 10; otherwise, <c>false</c>.</returns>
         internal static bool IsWin10()
         {
-            var osversioninfoex = GetVersion();
+            NtDll.OSVERSIONINFOEX osversioninfoex = GetVersion();
 
             return osversioninfoex.dwMajorVersion == 10 && osversioninfoex.dwMinorVersion == 0;
         }
@@ -76,8 +76,8 @@ namespace NdisApiDotNet
         /// <returns><see cref="NtDll.OSVERSIONINFOEX" />.</returns>
         private static NtDll.OSVERSIONINFOEX GetVersion()
         {
-            var osversioninfoex = new NtDll.OSVERSIONINFOEX();
-            osversioninfoex.dwOSVersionInfoSize = (uint) Marshal.SizeOf(osversioninfoex);
+            NtDll.OSVERSIONINFOEX osversioninfoex = new NtDll.OSVERSIONINFOEX();
+            osversioninfoex.dwOSVersionInfoSize = (uint)Marshal.SizeOf(osversioninfoex);
             NtDll.RtlGetVersion(ref osversioninfoex);
 
             return osversioninfoex;

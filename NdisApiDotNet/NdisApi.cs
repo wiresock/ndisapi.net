@@ -8,6 +8,8 @@
 // ----------------------------------------------
 
 
+using Microsoft.Win32.SafeHandles;
+using NdisApiDotNet.Native;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,42 +19,41 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
-using Microsoft.Win32.SafeHandles;
 
 namespace NdisApiDotNet
 {
-    public class NdisApi : IDisposable
+    public class NdisAPI : IDisposable
     {
         private readonly byte[] _driverNameBytes;
         private readonly object _lock = new object();
-        private readonly NdisApiHelper _ndisApiHelper;
-        private Native.NdisApi.ETH_M_REQUEST _ethPacketsToAdapter;
-        private Native.NdisApi.ETH_M_REQUEST _ethPacketsToMstcp;
+        private readonly NdisAPIHelper _ndisApiHelper;
+        private EthMRequest _ethPacketsToAdapter;
+        private EthMRequest _ethPacketsToMstcp;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NdisApi" /> class.
+        /// Initializes a new instance of the <see cref="NdisAPI" /> class.
         /// </summary>
         /// <param name="handle">The filter driver handle.</param>
-        protected NdisApi(SafeFilterDriverHandle handle)
+        protected NdisAPI(SafeFilterDriverHandle handle)
         {
             Handle = handle;
 
-            _ndisApiHelper = new NdisApiHelper();
+            _ndisApiHelper = new NdisAPIHelper();
             _ethPacketsToMstcp = _ndisApiHelper.CreateEthMRequest();
             _ethPacketsToAdapter = _ndisApiHelper.CreateEthMRequest();
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NdisApi" /> class.
+        /// Initializes a new instance of the <see cref="NdisAPI" /> class.
         /// </summary>
         /// <param name="handle">The filter driver handle.</param>
         /// <param name="driverNameBytes">The driver name bytes.</param>
-        protected NdisApi(SafeFilterDriverHandle handle, byte[] driverNameBytes)
+        protected NdisAPI(SafeFilterDriverHandle handle, byte[] driverNameBytes)
         {
             _driverNameBytes = driverNameBytes;
             Handle = handle;
 
-            _ndisApiHelper = new NdisApiHelper();
+            _ndisApiHelper = new NdisAPIHelper();
             _ethPacketsToMstcp = _ndisApiHelper.CreateEthMRequest();
             _ethPacketsToAdapter = _ndisApiHelper.CreateEthMRequest();
         }
@@ -69,12 +70,24 @@ namespace NdisApiDotNet
         /// <remarks>
         /// This only checks whether the DLL has been opened, you should probably also check if the driver has been loaded.
         /// </remarks>
-        public bool IsValid => !Handle.IsInvalid;
+        public bool IsValid
+        {
+            get
+            {
+                return !Handle.IsInvalid;
+            }
+        }
 
         /// <summary>
         /// Gets the maximum size of a packet in bytes.
         /// </summary>
-        public uint MaxPacketSize => Native.NdisApi.MAX_ETHER_FRAME;
+        public uint MaxPacketSize
+        {
+            get
+            {
+                return NdisApi.MAX_ETHER_FRAME;
+            }
+        }
 
         /// <inheritdoc />
         public virtual void Dispose()
@@ -87,17 +100,17 @@ namespace NdisApiDotNet
         /// Opens the filter driver.
         /// </summary>
         /// <param name="driverName">The name of the driver.</param>
-        /// <returns><see cref="NdisApi" />.</returns>
+        /// <returns><see cref="NdisAPI" />.</returns>
         /// <exception cref="Exception">Missing NDIS DLL</exception>
-        public static NdisApi Open(string driverName = "NDISRD")
+        public static NdisAPI Open(string driverName = "NDISRD")
         {
             if (!NdisApiDllExists())
                 throw new Exception("Missing NDIS DLL");
 
 
-            var driverNameBytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(driverName);
-            var handle = Native.NdisApi.OpenFilterDriver(driverNameBytes);
-            return new NdisApi(handle, driverNameBytes);
+            byte[] driverNameBytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(driverName);
+            SafeFilterDriverHandle handle = NdisApi.OpenFilterDriver(driverNameBytes);
+            return new NdisAPI(handle, driverNameBytes);
         }
 
         /// <summary>
@@ -118,7 +131,7 @@ namespace NdisApiDotNet
 
 
             Close();
-            Handle = Native.NdisApi.OpenFilterDriver(_driverNameBytes);
+            Handle = NdisApi.OpenFilterDriver(_driverNameBytes);
         }
 
         /// <summary>
@@ -127,7 +140,7 @@ namespace NdisApiDotNet
         /// <returns>System.UInt32.</returns>
         public uint GetNativeVersion()
         {
-            return Native.NdisApi.GetDriverVersion(Handle);
+            return NdisApi.GetDriverVersion(Handle);
         }
 
         /// <summary>
@@ -137,12 +150,12 @@ namespace NdisApiDotNet
         /// <returns><see cref="Version" />.</returns>
         public Version GetVersion(string fileName = "NDISRD")
         {
-            var filePath = Path.Combine(Environment.SystemDirectory, @"drivers\" + fileName + ".sys");
+            string filePath = Path.Combine(Environment.SystemDirectory, @"drivers\" + fileName + ".sys");
             if (!File.Exists(filePath))
                 return new Version(0, 0, 0, 0);
 
 
-            var fileVersionInfo = FileVersionInfo.GetVersionInfo(filePath);
+            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(filePath);
             return new Version(fileVersionInfo.FileVersion);
         }
 
@@ -152,7 +165,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if the driver is loaded; otherwise, <c>false</c>.</returns>
         public bool IsDriverLoaded()
         {
-            return Native.NdisApi.IsDriverLoaded(Handle);
+            return NdisApi.IsDriverLoaded(Handle);
         }
 
         /// <summary>
@@ -162,7 +175,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if the driver is installed; otherwise, <c>false</c>.</returns>
         public bool IsDriverInstalled(string componentId = "nt_ndisrd")
         {
-            using (var snetCfg = new NetCfg(""))
+            using (NetCfg snetCfg = new NetCfg(""))
             {
                 return snetCfg.IsInstalled(componentId);
             }
@@ -188,7 +201,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if uninstalled, <c>false</c> otherwise.</returns>
         public bool UninstallDriver(string componentId, out bool afterReboot, out uint errorCode)
         {
-            using (var snetCfg = new NetCfg(""))
+            using (NetCfg snetCfg = new NetCfg(""))
             {
                 return snetCfg.Uninstall(componentId, out afterReboot, out errorCode);
             }
@@ -217,7 +230,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if installed, <c>false</c> otherwise.</returns>
         public bool InstallDriver(string rootPath, string infFileName, string componentId, out bool afterReboot, out uint errorCode)
         {
-            var subFolder = "";
+            string subFolder = "";
             if (OperatingSystem.IsWin10())
                 subFolder = "win10";
             else if (OperatingSystem.IsWin8() || OperatingSystem.IsWin81())
@@ -227,9 +240,9 @@ namespace NdisApiDotNet
             else if (OperatingSystem.IsWinVista())
                 subFolder = "vista";
 
-            var architecture = Environment.Is64BitOperatingSystem ? "amd64" : "i386";
-            var path = Path.Combine(Path.Combine(rootPath, subFolder), architecture);
-            using (var snetCfg = new NetCfg(path))
+            string architecture = Environment.Is64BitOperatingSystem ? "amd64" : "i386";
+            string path = Path.Combine(Path.Combine(rootPath, subFolder), architecture);
+            using (NetCfg snetCfg = new NetCfg(path))
             {
                 return snetCfg.Install(infFileName, componentId, out afterReboot, out errorCode);
             }
@@ -244,9 +257,9 @@ namespace NdisApiDotNet
         {
             try
             {
-                var x509Certificate = new X509Certificate2(path);
+                X509Certificate2 x509Certificate = new X509Certificate2(path);
 
-                var x509Store = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
+                X509Store x509Store = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
                 x509Store.Open(OpenFlags.ReadWrite);
                 x509Store.Add(x509Certificate);
                 x509Store.Close();
@@ -264,7 +277,7 @@ namespace NdisApiDotNet
         /// <returns>System.UInt32.</returns>
         public uint GetMtuDecrement()
         {
-            return Native.NdisApi.GetMTUDecrement();
+            return NdisApi.GetMTUDecrement();
         }
 
         /// <summary>
@@ -273,7 +286,7 @@ namespace NdisApiDotNet
         /// <returns>System.UInt32.</returns>
         public uint GetBytesReturned()
         {
-            return Native.NdisApi.GetBytesReturned(Handle);
+            return NdisApi.GetBytesReturned(Handle);
         }
 
         /// <summary>
@@ -283,16 +296,16 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool SetMtuDecrement(uint mtuDecrement)
         {
-            return Native.NdisApi.SetMTUDecrement(mtuDecrement);
+            return NdisApi.SetMTUDecrement(mtuDecrement);
         }
 
         /// <summary>
         /// Gets the adapters startup mode.
         /// </summary>
         /// <returns>System.UInt32.</returns>
-        public Native.NdisApi.MSTCP_FLAGS GetAdaptersStartupMode()
+        public MSTCPFlags GetAdaptersStartupMode()
         {
-            return Native.NdisApi.GetAdaptersStartupMode();
+            return NdisApi.GetAdaptersStartupMode();
         }
 
         /// <summary>
@@ -301,15 +314,15 @@ namespace NdisApiDotNet
         /// <returns>The <see cref="NetworkAdapter" />s.</returns>
         public IEnumerable<NetworkAdapter> GetNetworkAdapters()
         {
-            var adapterList = new Native.NdisApi.TCP_AdapterList();
-            Native.NdisApi.GetTcpipBoundAdaptersInfo(Handle, ref adapterList);
+            TCPAdapterList adapterList = new TCPAdapterList();
+            NdisApi.GetTcpipBoundAdaptersInfo(Handle, ref adapterList);
 
-            for (var i = 0; i < adapterList.m_nAdapterCount; i++)
+            for (int i = 0; i < adapterList.m_nAdapterCount; i++)
             {
                 yield return new NetworkAdapter(adapterList.AdapterHandle[i],
-                                                adapterList.AdapterNames.Skip(i * Native.NdisApi.ADAPTER_NAME_SIZE).Take(Native.NdisApi.ADAPTER_NAME_SIZE).ToArray(),
+                                                adapterList.AdapterNames.Skip(i * NdisApi.ADAPTER_NAME_SIZE).Take(NdisApi.ADAPTER_NAME_SIZE).ToArray(),
                                                 adapterList.AdapterMediums[i],
-                                                adapterList.CurrentAddress.Skip(i * Native.NdisApi.ETHER_ADDR_LENGTH).Take(Native.NdisApi.ETHER_ADDR_LENGTH).ToArray(),
+                                                adapterList.CurrentAddress.Skip(i * NdisApi.ETHER_ADDR_LENGTH).Take(NdisApi.ETHER_ADDR_LENGTH).ToArray(),
                                                 adapterList.MTU[i]);
             }
         }
@@ -319,12 +332,11 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="flags">The flags.</param>
         /// <returns><see cref="NetworkAdapter" />s.</returns>
-        public IEnumerable<NetworkAdapter> GetNetworkAdapters(Native.NdisApi.MSTCP_FLAGS flags)
+        public IEnumerable<NetworkAdapter> GetNetworkAdapters(MSTCPFlags flags)
         {
-            foreach (var networkAdapter in GetNetworkAdapters())
+            foreach (NetworkAdapter networkAdapter in GetNetworkAdapters())
             {
-                if (GetAdapterMode(networkAdapter).Flags.Equals(flags))
-                    yield return networkAdapter;
+                if (GetAdapterMode(networkAdapter).Flags.Equals(flags)) yield return networkAdapter;
             }
         }
 
@@ -334,10 +346,9 @@ namespace NdisApiDotNet
         /// <returns><see cref="NetworkAdapter" />s.</returns>
         public IEnumerable<NetworkAdapter> GetBoundNetworkAdapters()
         {
-            foreach (var networkAdapter in GetNetworkAdapters())
+            foreach (NetworkAdapter networkAdapter in GetNetworkAdapters())
             {
-                if (GetAdapterMode(networkAdapter).Flags != 0)
-                    yield return networkAdapter;
+                if (GetAdapterMode(networkAdapter).Flags != 0) yield return networkAdapter;
             }
         }
 
@@ -347,10 +358,11 @@ namespace NdisApiDotNet
         /// <param name="networkAdapter">The network adapter.</param>
         /// <param name="flags">The flags.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SetAdapterMode(NetworkAdapter networkAdapter, Native.NdisApi.MSTCP_FLAGS flags)
+        public bool SetAdapterMode(NetworkAdapter networkAdapter, MSTCPFlags flags)
         {
-            var adapterMode = new Native.NdisApi.ADAPTER_MODE { dwFlags = flags, hAdapterHandle = networkAdapter.Handle };
-            return Native.NdisApi.SetAdapterMode(Handle, ref adapterMode);
+            AdapterMode adapterMode = new AdapterMode { dwFlags = flags, hAdapterHandle = networkAdapter.Handle };
+
+            return NdisApi.SetAdapterMode(Handle, ref adapterMode);
         }
 
         /// <summary>
@@ -360,8 +372,9 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool ResetAdapterMode(NetworkAdapter networkAdapter)
         {
-            var adapterMode = new Native.NdisApi.ADAPTER_MODE { dwFlags = 0, hAdapterHandle = networkAdapter.Handle };
-            return Native.NdisApi.SetAdapterMode(Handle, ref adapterMode);
+            AdapterMode adapterMode = new AdapterMode { dwFlags = 0, hAdapterHandle = networkAdapter.Handle };
+
+            return NdisApi.SetAdapterMode(Handle, ref adapterMode);
         }
 
         /// <summary>
@@ -372,9 +385,8 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool SetPacketEvent(NetworkAdapter networkAdapter, WaitHandle waitHandle)
         {
-            var success = Native.NdisApi.SetPacketEvent(Handle, networkAdapter.Handle, waitHandle.SafeWaitHandle);
-            if (success)
-                networkAdapter.WaitHandle = waitHandle;
+            bool success = NdisApi.SetPacketEvent(Handle, networkAdapter.Handle, waitHandle.SafeWaitHandle);
+            if (success) networkAdapter.WaitHandle = waitHandle;
 
             return success;
         }
@@ -388,7 +400,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool SetPacketEvent(NetworkAdapter networkAdapter, SafeWaitHandle safeWaitHandle)
         {
-            return Native.NdisApi.SetPacketEvent(Handle, networkAdapter.Handle, safeWaitHandle);
+            return NdisApi.SetPacketEvent(Handle, networkAdapter.Handle, safeWaitHandle);
         }
 
         /// <summary>
@@ -398,7 +410,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool SetWanEvent(SafeWaitHandle safeWaitHandle)
         {
-            return Native.NdisApi.SetWANEvent(Handle, safeWaitHandle);
+            return NdisApi.SetWANEvent(Handle, safeWaitHandle);
         }
 
         /// <summary>
@@ -408,7 +420,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool SetAdapterListChangeEvent(SafeWaitHandle safeWaitHandle)
         {
-            return Native.NdisApi.SetAdapterListChangeEvent(Handle, safeWaitHandle);
+            return NdisApi.SetAdapterListChangeEvent(Handle, safeWaitHandle);
         }
 
         /// <summary>
@@ -417,9 +429,9 @@ namespace NdisApiDotNet
         /// <param name="ethRequest">The ether request.</param>
         /// <remarks>The adapter handle needs to be set.</remarks>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool ReadPacket(ref Native.NdisApi.ETH_REQUEST ethRequest)
+        public bool ReadPacket(ref EthRequest ethRequest)
         {
-            return Native.NdisApi.ReadPacket(Handle, ref ethRequest);
+            return NdisApi.ReadPacket(Handle, ref ethRequest);
         }
 
         /// <summary>
@@ -428,9 +440,9 @@ namespace NdisApiDotNet
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <remarks>The adapter handle needs to be set.</remarks>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool ReadPackets(ref Native.NdisApi.ETH_M_REQUEST ethMRequest)
+        public bool ReadPackets(ref EthMRequest ethMRequest)
         {
-            return Native.NdisApi.ReadPackets(Handle, ref ethMRequest);
+            return NdisApi.ReadPackets(Handle, ref ethMRequest);
         }
 
         /// <summary>
@@ -439,9 +451,9 @@ namespace NdisApiDotNet
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <remarks>The adapter handle needs to be set.</remarks>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public unsafe bool ReadPackets(Native.NdisApi.ETH_M_REQUEST_U* ethMRequest)
+        public unsafe bool ReadPackets(EthMRequestUnsafe* ethMRequest)
         {
-            return Native.NdisApi.ReadPackets(Handle, ethMRequest);
+            return NdisApi.ReadPackets(Handle, ethMRequest);
         }
 
         /// <summary>
@@ -449,9 +461,9 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethRequest">The ether request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPacketToAdapter(ref Native.NdisApi.ETH_REQUEST ethRequest)
+        public bool SendPacketToAdapter(ref EthRequest ethRequest)
         {
-            return Native.NdisApi.SendPacketToAdapter(Handle, ref ethRequest);
+            return NdisApi.SendPacketToAdapter(Handle, ref ethRequest);
         }
 
         /// <summary>
@@ -459,9 +471,9 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethRequest">The ether request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPacketToMstcp(ref Native.NdisApi.ETH_REQUEST ethRequest)
+        public bool SendPacketToMstcp(ref EthRequest ethRequest)
         {
-            return Native.NdisApi.SendPacketToMstcp(Handle, ref ethRequest);
+            return NdisApi.SendPacketToMstcp(Handle, ref ethRequest);
         }
 
         /// <summary>
@@ -469,13 +481,13 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethRequest">The ether request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPacket(ref Native.NdisApi.ETH_REQUEST ethRequest)
+        public bool SendPacket(ref EthRequest ethRequest)
         {
             unsafe
             {
-                var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER_U*)ethRequest._ethPacket._buffer;
+                IntermediateBufferUnsafe* buffer = (IntermediateBufferUnsafe*)ethRequest._ethPacket._buffer;
 
-                if (buffer->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
+                if (buffer->m_dwDeviceFlags == PacketFlag.Send)
                     return SendPacketToAdapter(ref ethRequest);
             }
 
@@ -487,9 +499,9 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPacketsToAdapter(ref Native.NdisApi.ETH_M_REQUEST ethMRequest)
+        public bool SendPacketsToAdapter(ref EthMRequest ethMRequest)
         {
-            return Native.NdisApi.SendPacketsToAdapter(Handle, ref ethMRequest);
+            return NdisApi.SendPacketsToAdapter(Handle, ref ethMRequest);
         }
 
         /// <summary>
@@ -497,9 +509,9 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public unsafe bool SendPacketsToAdapter(Native.NdisApi.ETH_M_REQUEST_U* ethMRequest)
+        public unsafe bool SendPacketsToAdapter(EthMRequestUnsafe* ethMRequest)
         {
-            return Native.NdisApi.SendPacketsToAdapter(Handle, ethMRequest);
+            return NdisApi.SendPacketsToAdapter(Handle, ethMRequest);
         }
 
         /// <summary>
@@ -507,9 +519,9 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPacketsToMstcp(ref Native.NdisApi.ETH_M_REQUEST ethMRequest)
+        public bool SendPacketsToMstcp(ref EthMRequest ethMRequest)
         {
-            return Native.NdisApi.SendPacketsToMstcp(Handle, ref ethMRequest);
+            return NdisApi.SendPacketsToMstcp(Handle, ref ethMRequest);
         }
 
         /// <summary>
@@ -517,9 +529,9 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public unsafe bool SendPacketsToMstcp(Native.NdisApi.ETH_M_REQUEST_U* ethMRequest)
+        public unsafe bool SendPacketsToMstcp(EthMRequestUnsafe* ethMRequest)
         {
-            return Native.NdisApi.SendPacketsToMstcp(Handle, ethMRequest);
+            return NdisApi.SendPacketsToMstcp(Handle, ethMRequest);
         }
 
         /// <summary>
@@ -527,7 +539,7 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPackets(ref Native.NdisApi.ETH_M_REQUEST ethMRequest)
+        public bool SendPackets(ref EthMRequest ethMRequest)
         {
             lock (_lock)
             {
@@ -546,23 +558,21 @@ namespace NdisApiDotNet
                 {
                     for (int i = 0; i < ethMRequest.dwPacketsSuccess; i++)
                     {
-                        var packet = ethMRequest._ethPacket[i];
-                        var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER_U*)packet._buffer;
+                        EthPacket packet = ethMRequest._ethPacket[i];
+                        IntermediateBufferUnsafe* buffer = (IntermediateBufferUnsafe*)packet._buffer;
 
-                        if (buffer->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
+                        if (buffer->m_dwDeviceFlags == PacketFlag.Send)
                             _ethPacketsToAdapter._ethPacket[_ethPacketsToAdapter.dwPacketsNumber++]._buffer = packet._buffer;
                         else
                             _ethPacketsToMstcp._ethPacket[_ethPacketsToMstcp.dwPacketsNumber++]._buffer = packet._buffer;
                     }
                 }
 
-                var success = true;
+                bool success = true;
 
-                if (_ethPacketsToMstcp.dwPacketsNumber > 0)
-                    success = SendPacketsToMstcp(ref _ethPacketsToMstcp);
+                if (_ethPacketsToMstcp.dwPacketsNumber > 0) success = SendPacketsToMstcp(ref _ethPacketsToMstcp);
 
-                if (_ethPacketsToAdapter.dwPacketsNumber > 0)
-                    success = SendPacketsToAdapter(ref _ethPacketsToAdapter) && success;
+                if (_ethPacketsToAdapter.dwPacketsNumber > 0) success = SendPacketsToAdapter(ref _ethPacketsToAdapter) && success;
 
                 return success;
             }
@@ -573,7 +583,7 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="ethRequests">The ether requests.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPackets(IList<Native.NdisApi.ETH_REQUEST> ethRequests)
+        public bool SendPackets(IList<EthRequest> ethRequests)
         {
             lock (_lock)
             {
@@ -581,12 +591,12 @@ namespace NdisApiDotNet
                     return true;
 
 
-                var adapterHandles = new HashSet<IntPtr>(ethRequests.Select(x => x.AdapterHandle));
-                var success = true;
+                HashSet<IntPtr> adapterHandles = new HashSet<IntPtr>(ethRequests.Select(x => x.AdapterHandle));
+                bool success = true;
 
                 unsafe
                 {
-                    foreach (var adapterHandle in adapterHandles)
+                    foreach (IntPtr adapterHandle in adapterHandles)
                     {
                         _ethPacketsToAdapter.dwPacketsSuccess = 0;
                         _ethPacketsToMstcp.dwPacketsSuccess = 0;
@@ -595,16 +605,16 @@ namespace NdisApiDotNet
                         _ethPacketsToAdapter.hAdapterHandle = adapterHandle;
                         _ethPacketsToMstcp.hAdapterHandle = adapterHandle;
 
-                        foreach (var ethRequest in ethRequests)
+                        foreach (EthRequest ethRequest in ethRequests)
                         {
                             if (!ethRequest.AdapterHandle.Equals(adapterHandle))
                                 continue;
 
 
-                            var packet = ethRequest._ethPacket;
-                            var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER_U*)packet._buffer;
+                            EthPacket packet = ethRequest._ethPacket;
+                            IntermediateBufferUnsafe* buffer = (IntermediateBufferUnsafe*)packet._buffer;
 
-                            if (buffer->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
+                            if (buffer->m_dwDeviceFlags == PacketFlag.Send)
                                 _ethPacketsToAdapter._ethPacket[_ethPacketsToAdapter.dwPacketsNumber++]._buffer = packet._buffer;
                             else
                                 _ethPacketsToMstcp._ethPacket[_ethPacketsToMstcp.dwPacketsNumber++]._buffer = packet._buffer;
@@ -628,7 +638,7 @@ namespace NdisApiDotNet
         /// <param name="networkAdapter">The network adapter.</param>
         /// <param name="ethRequests">The ether requests.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPackets(NetworkAdapter networkAdapter, IList<Native.NdisApi.NDISRD_ETH_Packet> ethRequests)
+        public bool SendPackets(NetworkAdapter networkAdapter, IList<EthPacket> ethRequests)
         {
             return SendPackets(networkAdapter.Handle, ethRequests);
         }
@@ -639,7 +649,7 @@ namespace NdisApiDotNet
         /// <param name="adapterHandle">The adapter handle.</param>
         /// <param name="ethRequests">The ether requests.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SendPackets(IntPtr adapterHandle, IList<Native.NdisApi.NDISRD_ETH_Packet> ethRequests)
+        public bool SendPackets(IntPtr adapterHandle, IList<EthPacket> ethRequests)
         {
             lock (_lock)
             {
@@ -654,20 +664,20 @@ namespace NdisApiDotNet
                 _ethPacketsToAdapter.hAdapterHandle = adapterHandle;
                 _ethPacketsToMstcp.hAdapterHandle = adapterHandle;
 
-                foreach (var packet in ethRequests)
+                foreach (EthPacket packet in ethRequests)
                 {
                     unsafe
                     {
-                        var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER_U*)packet._buffer;
+                        IntermediateBufferUnsafe* buffer = (IntermediateBufferUnsafe*)packet._buffer;
 
-                        if (buffer->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
+                        if (buffer->m_dwDeviceFlags == PacketFlag.Send)
                             _ethPacketsToAdapter._ethPacket[_ethPacketsToAdapter.dwPacketsNumber++]._buffer = packet._buffer;
                         else
                             _ethPacketsToMstcp._ethPacket[_ethPacketsToMstcp.dwPacketsNumber++]._buffer = packet._buffer;
                     }
                 }
 
-                var success = true;
+                bool success = true;
 
                 if (_ethPacketsToMstcp.dwPacketsNumber > 0)
                     success = SendPacketsToMstcp(ref _ethPacketsToMstcp);
@@ -685,7 +695,7 @@ namespace NdisApiDotNet
         /// <param name="ethMRequest">The ether multiple request.</param>
         /// <param name="packets">The optional packets.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public unsafe bool SendPackets(Native.NdisApi.ETH_M_REQUEST_U* ethMRequest, Native.NdisApi.NDISRD_ETH_Packet[] packets = null)
+        public unsafe bool SendPackets(EthMRequestUnsafe* ethMRequest, EthPacket[] packets = null)
         {
             lock (_lock)
             {
@@ -698,17 +708,17 @@ namespace NdisApiDotNet
 
                 packets = packets ?? ethMRequest->GetPackets();
 
-                foreach (var packet in packets)
+                foreach (EthPacket packet in packets)
                 {
-                    var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER_U*)packet._buffer;
+                    IntermediateBufferUnsafe* buffer = (IntermediateBufferUnsafe*)packet._buffer;
 
-                    if (buffer->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
+                    if (buffer->m_dwDeviceFlags == PacketFlag.Send)
                         _ethPacketsToAdapter._ethPacket[_ethPacketsToAdapter.dwPacketsNumber++]._buffer = packet._buffer;
                     else
                         _ethPacketsToMstcp._ethPacket[_ethPacketsToMstcp.dwPacketsNumber++]._buffer = packet._buffer;
                 }
 
-                var success = true;
+                bool success = true;
 
                 if (_ethPacketsToMstcp.dwPacketsNumber > 0)
                     success = SendPacketsToMstcp(ref _ethPacketsToMstcp);
@@ -727,7 +737,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool FlushAdapterPacketQueue(NetworkAdapter networkAdapter)
         {
-            return Native.NdisApi.FlushAdapterPacketQueue(Handle, networkAdapter.Handle);
+            return NdisApi.FlushAdapterPacketQueue(Handle, networkAdapter.Handle);
         }
 
         /// <summary>
@@ -738,8 +748,8 @@ namespace NdisApiDotNet
         public int GetAdapterPacketQueueSize(NetworkAdapter networkAdapter)
         {
             uint size = 0;
-            if (Native.NdisApi.GetAdapterPacketQueueSize(Handle, networkAdapter.Handle, ref size))
-                return (int) size;
+            if (NdisApi.GetAdapterPacketQueueSize(Handle, networkAdapter.Handle, ref size))
+                return (int)size;
 
 
             return -1;
@@ -751,9 +761,9 @@ namespace NdisApiDotNet
         /// <param name="packetOidData">The packet oid data.</param>
         /// <param name="set">if set to <c>true</c> [set].</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool NdisrdRequest(ref Native.NdisApi.PACKET_OID_DATA packetOidData, bool set)
+        public bool NdisrdRequest(ref PacketOID packetOidData, bool set)
         {
-            return Native.NdisApi.NdisrdRequest(Handle, ref packetOidData, set);
+            return NdisApi.NdisrdRequest(Handle, ref packetOidData, set);
         }
 
         /// <summary>
@@ -762,20 +772,20 @@ namespace NdisApiDotNet
         /// <param name="networkAdapter">The network adapter.</param>
         /// <param name="ndisPacketType">Type of the ndis packet.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SetHwPacketFilter(NetworkAdapter networkAdapter, Native.NdisApi.NDIS_PACKET_TYPE ndisPacketType)
+        public bool SetHwPacketFilter(NetworkAdapter networkAdapter, PacketType ndisPacketType)
         {
-            return Native.NdisApi.SetHwPacketFilter(Handle, networkAdapter.Handle, ndisPacketType);
+            return NdisApi.SetHwPacketFilter(Handle, networkAdapter.Handle, ndisPacketType);
         }
 
         /// <summary>
         /// Gets the hardware packet filter.
         /// </summary>
         /// <param name="networkAdapter">The network adapter.</param>
-        /// <returns><see cref="Native.NdisApi.NDIS_PACKET_TYPE" />.</returns>
-        public Native.NdisApi.NDIS_PACKET_TYPE GetHwPacketFilter(NetworkAdapter networkAdapter)
+        /// <returns><see cref="PacketType" />.</returns>
+        public PacketType GetHwPacketFilter(NetworkAdapter networkAdapter)
         {
-            var ndisPacketType = Native.NdisApi.NDIS_PACKET_TYPE.NDIS_PACKET_TYPE_NONE;
-            Native.NdisApi.GetHwPacketFilter(Handle, networkAdapter.Handle, ref ndisPacketType);
+            PacketType ndisPacketType = PacketType.None;
+            NdisApi.GetHwPacketFilter(Handle, networkAdapter.Handle, ref ndisPacketType);
             return ndisPacketType;
         }
 
@@ -784,19 +794,19 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="filterTable">The filter table.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SetPacketFilterTable(Native.NdisApi.STATIC_FILTER_TABLE filterTable)
+        public bool SetPacketFilterTable(StaticFilterTable filterTable)
         {
-            return Native.NdisApi.SetPacketFilterTable(Handle, ref filterTable);
+            return NdisApi.SetPacketFilterTable(Handle, ref filterTable);
         }
 
         /// <summary>
         /// Gets the packet filter table.
         /// </summary>
-        /// <returns><see cref="Native.NdisApi.STATIC_FILTER_TABLE" />.</returns>
-        public Native.NdisApi.STATIC_FILTER_TABLE GetPacketFilterTable()
+        /// <returns><see cref="StaticFilterTable" />.</returns>
+        public StaticFilterTable GetPacketFilterTable()
         {
-            Native.NdisApi.STATIC_FILTER_TABLE filterTable = default;
-            Native.NdisApi.GetPacketFilterTable(Handle, ref filterTable);
+            StaticFilterTable filterTable = default;
+            NdisApi.GetPacketFilterTable(Handle, ref filterTable);
             return filterTable;
         }
 
@@ -805,20 +815,20 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="filterTable">The filter table.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public unsafe bool SetPacketFilterTable(Native.NdisApi.STATIC_FILTER_TABLE_U* filterTable)
+        public unsafe bool SetPacketFilterTable(StaticFilterTableUnsafe* filterTable)
         {
-            return Native.NdisApi.SetPacketFilterTable(Handle, filterTable);
+            return NdisApi.SetPacketFilterTable(Handle, filterTable);
         }
 
         /// <summary>
         /// Gets the unsafe packet filter table.
         /// </summary>
-        /// <returns><see cref="Native.NdisApi.STATIC_FILTER_TABLE_U" />.</returns>
-        public unsafe Native.NdisApi.STATIC_FILTER_TABLE_U GetUnsafePacketFilterTable()
+        /// <returns><see cref="StaticFilterTableUnsafe" />.</returns>
+        public unsafe StaticFilterTableUnsafe GetUnsafePacketFilterTable()
         {
-            var tableSize = GetPacketFilterTableSize();
-            var filterTable = _ndisApiHelper.CreateUnsafeStaticFilterTable(tableSize);
-            Native.NdisApi.GetPacketFilterTable(Handle, filterTable);
+            uint tableSize = GetPacketFilterTableSize();
+            StaticFilterTableUnsafe* filterTable = _ndisApiHelper.CreateUnsafeStaticFilterTable(tableSize);
+            NdisApi.GetPacketFilterTable(Handle, filterTable);
 
             _ndisApiHelper.DisposeObject(filterTable);
 
@@ -830,9 +840,9 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="flags">The flags.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SetAdaptersStartupMode(Native.NdisApi.MSTCP_FLAGS flags)
+        public bool SetAdaptersStartupMode(MSTCPFlags flags)
         {
-            return Native.NdisApi.SetAdaptersStartupMode(flags);
+            return NdisApi.SetAdaptersStartupMode(flags);
         }
 
         /// <summary>
@@ -840,12 +850,12 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="networkAdapter">The network adapter.</param>
         /// <returns>
-        /// <see cref="Native.NdisApi.ADAPTER_MODE" />.
+        /// <see cref="AdapterMode" />.
         /// </returns>
-        public Native.NdisApi.ADAPTER_MODE GetAdapterMode(NetworkAdapter networkAdapter)
+        public AdapterMode GetAdapterMode(NetworkAdapter networkAdapter)
         {
-            var adapterMode = new Native.NdisApi.ADAPTER_MODE { hAdapterHandle = networkAdapter.Handle };
-            Native.NdisApi.GetAdapterMode(Handle, ref adapterMode);
+            AdapterMode adapterMode = new AdapterMode { hAdapterHandle = networkAdapter.Handle };
+            NdisApi.GetAdapterMode(Handle, ref adapterMode);
             return adapterMode;
         }
 
@@ -853,12 +863,12 @@ namespace NdisApiDotNet
         /// Gets the size of the packet filter table.
         /// </summary>
         /// <returns>
-        /// <see cref="System.UInt32" />.
+        /// <see cref="uint" />.
         /// </returns>
         public uint GetPacketFilterTableSize()
         {
             uint tableSize = 0;
-            Native.NdisApi.GetPacketFilterTableSize(Handle, ref tableSize);
+            NdisApi.GetPacketFilterTableSize(Handle, ref tableSize);
             return tableSize;
         }
 
@@ -866,12 +876,12 @@ namespace NdisApiDotNet
         /// Gets the packet filter table reset stats.
         /// </summary>
         /// <returns>
-        /// <see cref="Native.NdisApi.STATIC_FILTER_TABLE" />.
+        /// <see cref="StaticFilterTable" />.
         /// </returns>
-        public Native.NdisApi.STATIC_FILTER_TABLE GetPacketFilterTableResetStats()
+        public StaticFilterTable GetPacketFilterTableResetStats()
         {
-            Native.NdisApi.STATIC_FILTER_TABLE filterList = default;
-            Native.NdisApi.GetPacketFilterTableResetStats(Handle, ref filterList);
+            StaticFilterTable filterList = default;
+            NdisApi.GetPacketFilterTableResetStats(Handle, ref filterList);
             return filterList;
         }
 
@@ -879,13 +889,13 @@ namespace NdisApiDotNet
         /// Gets the packet filter table reset stats.
         /// </summary>
         /// <returns>
-        /// <see cref="Native.NdisApi.STATIC_FILTER_TABLE_U" />.
+        /// <see cref="StaticFilterTableUnsafe" />.
         /// </returns>
-        public unsafe Native.NdisApi.STATIC_FILTER_TABLE_U GetUnsafePacketFilterTableResetStats()
+        public unsafe StaticFilterTableUnsafe GetUnsafePacketFilterTableResetStats()
         {
-            var tableSize = GetPacketFilterTableSize();
-            var filterTable = _ndisApiHelper.CreateUnsafeStaticFilterTable(tableSize);
-            Native.NdisApi.GetPacketFilterTableResetStats(Handle, filterTable);
+            uint tableSize = GetPacketFilterTableSize();
+            StaticFilterTableUnsafe* filterTable = _ndisApiHelper.CreateUnsafeStaticFilterTable(tableSize);
+            NdisApi.GetPacketFilterTableResetStats(Handle, filterTable);
 
             _ndisApiHelper.DisposeObject(filterTable);
 
@@ -897,20 +907,20 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="networkAdapter">The network adapter.</param>
         /// <returns>
-        ///     <see cref="Native.NdisApi.RAS_LINKS" />
+        ///     <see cref="RAS_LINKS" />
         /// </returns>
-        public Native.NdisApi.RAS_LINKS GetRasLinks(NetworkAdapter networkAdapter)
+        public RasLinks GetRasLinks(NetworkAdapter networkAdapter)
         {
-            var rasLinksPtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Native.NdisApi.RAS_LINKS)));
+            IntPtr rasLinksPtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(RasLinks)));
 
             try
             {
-                var result = Native.NdisApi.GetRasLinks(Handle, networkAdapter.Handle, rasLinksPtr);
+                bool result = NdisApi.GetRasLinks(Handle, networkAdapter.Handle, rasLinksPtr);
                 if (!result)
                     return default;
 
 
-                return (Native.NdisApi.RAS_LINKS) Marshal.PtrToStructure(rasLinksPtr, typeof(Native.NdisApi.RAS_LINKS));
+                return (RasLinks)Marshal.PtrToStructure(rasLinksPtr, typeof(RasLinks));
             }
             finally
             {
@@ -924,19 +934,19 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
         public bool ResetPacketFilterTable()
         {
-            return Native.NdisApi.ResetPacketFilterTable(Handle);
+            return NdisApi.ResetPacketFilterTable(Handle);
         }
 
         /// <summary>
         /// Determines whether the NdisApi DLL exists.
         /// </summary>
         /// <returns>
-        /// <see cref="System.Boolean" />.
+        /// <see cref="bool" />.
         /// </returns>
         private static bool NdisApiDllExists()
         {
-            var directory = AppDomain.CurrentDomain.BaseDirectory;
-            var path = Path.Combine(directory, "ndisapi.dll");
+            string directory = AppDomain.CurrentDomain.BaseDirectory;
+            string path = Path.Combine(directory, "ndisapi.dll");
 
             return File.Exists(path);
         }
