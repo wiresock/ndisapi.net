@@ -8,41 +8,49 @@
 // ----------------------------------------------
 
 
+using NdisApiDotNet;
+using NdisApiDotNet.Filters;
+using NdisApiDotNet.Native;
+using NdisApiDotNetPacketDotNet.Extensions;
+using PacketDotNet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NdisApiDotNet;
-using NdisApiDotNetPacketDotNet.Extensions;
-using PacketDotNet;
 
 namespace NdisApiDemo
 {
-    class Program
+    internal class Program
     {
-        private static void Main()
+        private static async Task Main()
         {
-            var filter = NdisApi.Open();
-            if (!filter.IsValid)
-                throw new ApplicationException("Cannot load driver.");
+            NdisAPI filter = NdisAPI.Open();
+            if (!filter.IsValid) throw new ApplicationException("Cannot load driver.");
 
+            Console.WriteLine($"Loaded driver: {NdisAPI.GetVersion()}.");
 
-            Console.WriteLine($"Loaded driver: {filter.GetVersion()}.");
-            
+            StaticFilterTable filterTable = new StaticFilterTable(0);
+            filterTable.Add(FilterAction.Redirect, new TCPUDPFilter(FilterFields.Source, 6672));
+            filterTable.Add(FilterAction.Redirect, new TCPUDPFilter(FilterFields.Destination, 6672));
+            StaticFilter f = filterTable.Add(FilterAction.Pass);
+
+            /*Console.WriteLine(filterTable.Contains(f));
+            Console.WriteLine(filterTable.Remove(f));
+            Console.WriteLine(filterTable.Contains(f));*/
+
+            filter.SetPacketFilterTable(filterTable);
+
             // Create and set event for the adapters.
-            var waitHandlesCollection = new List<ManualResetEvent>();
-            var tcpAdapters = new List<NetworkAdapter>();
-            foreach (var networkAdapter in filter.GetNetworkAdapters())
+            List<ManualResetEvent> waitHandlesCollection = new List<ManualResetEvent>();
+            List<NetworkAdapter> tcpAdapters = new List<NetworkAdapter>();
+            foreach (NetworkAdapter networkAdapter in filter.GetNetworkAdapters())
             {
                 if (networkAdapter.IsValid)
                 {
-                    var success = filter.SetAdapterMode(networkAdapter,
-                                                            NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_TUNNEL |
-                                                            NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_LOOPBACK_FILTER |
-                                                            NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_LOOPBACK_BLOCK);
+                    bool success = filter.SetAdapterMode(networkAdapter, MSTCPFlags.Tunnel | MSTCPFlags.FilterLoopback | MSTCPFlags.BlockLoopback);
 
-                    var manualResetEvent = new ManualResetEvent(false);
+                    ManualResetEvent manualResetEvent = new ManualResetEvent(false);
 
                     success &= filter.SetPacketEvent(networkAdapter, manualResetEvent.SafeWaitHandle);
 
@@ -56,13 +64,13 @@ namespace NdisApiDemo
                 }
             }
 
-            var waitHandlesManualResetEvents = waitHandlesCollection.Cast<ManualResetEvent>().ToArray();
-            var waitHandles = waitHandlesCollection.Cast<WaitHandle>().ToArray();
+            ManualResetEvent[] waitHandlesManualResetEvents = waitHandlesCollection.Cast<ManualResetEvent>().ToArray();
+            WaitHandle[] waitHandles = waitHandlesCollection.Cast<WaitHandle>().ToArray();
 
-            var t1 = Task.Factory.StartNew(() => PassThruThread(filter, waitHandles, tcpAdapters.ToArray(), waitHandlesManualResetEvents));
-            Task.WaitAll(t1);
+            await Task.Run(() => PassThruThread(filter, waitHandles, tcpAdapters.ToArray(), waitHandlesManualResetEvents));
 
-            Console.Read();
+            Console.WriteLine("Exited callback thread");
+            Console.ReadLine();
         }
 
         /// <summary>
@@ -72,28 +80,32 @@ namespace NdisApiDemo
         /// <param name="waitHandles">The wait handles.</param>
         /// <param name="networkAdapters">The network adapters.</param>
         /// <param name="waitHandlesManualResetEvents">The wait handles manual reset events.</param>
-        private static void PassThruThread(NdisApi filter, WaitHandle[] waitHandles, IReadOnlyList<NetworkAdapter> networkAdapters, IReadOnlyList<ManualResetEvent> waitHandlesManualResetEvents)
+        private static void PassThruThread(NdisAPI filter, WaitHandle[] waitHandles, IReadOnlyList<NetworkAdapter> networkAdapters, IReadOnlyList<ManualResetEvent> waitHandlesManualResetEvents)
         {
-            var ndisApiHelper = new NdisApiHelper();
+            NdisAPIHelper ndisApiHelper = new NdisAPIHelper();
 
-            var ethPackets = ndisApiHelper.CreateEthMRequest();
+            EthMRequest ethPackets = ndisApiHelper.CreateEthMRequest();
 
             while (true)
             {
-                var handle = WaitHandle.WaitAny(waitHandles);
+                int handle = WaitHandle.WaitAny(waitHandles);
                 ethPackets.AdapterHandle = networkAdapters[handle].Handle;
 
                 while (filter.ReadPackets(ref ethPackets))
                 {
-                    var packets = ethPackets.Packets;
+                    EthPacket[] packets = ethPackets.Packets;
                     for (int i = 0; i < ethPackets.PacketsCount; i++)
                     {
-                        var ethPacket = packets[i].GetEthernetPacket(ndisApiHelper);
+                        EthernetPacket ethPacket = packets[i].GetEthernetPacket(ndisApiHelper);
                         if (ethPacket.PayloadPacket is IPv4Packet iPv4Packet)
                         {
                             if (iPv4Packet.PayloadPacket is TcpPacket tcpPacket)
                             {
-                                Console.WriteLine($"{iPv4Packet.SourceAddress}:{tcpPacket.SourcePort} -> {iPv4Packet.DestinationAddress}:{tcpPacket.DestinationPort}.");
+                                Console.WriteLine($"[TCP] {iPv4Packet.SourceAddress}:{tcpPacket.SourcePort} -> {iPv4Packet.DestinationAddress}:{tcpPacket.DestinationPort}.");
+                            }
+                            else if (iPv4Packet.PayloadPacket is UdpPacket udpPacket)
+                            {
+                                Console.WriteLine($"[UDP] {iPv4Packet.SourceAddress}:{udpPacket.SourcePort} -> {iPv4Packet.DestinationAddress}:{udpPacket.DestinationPort} ({udpPacket.PayloadData.Length}).");
                             }
                         }
                     }

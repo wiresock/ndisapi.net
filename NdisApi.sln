@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27428.2043
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NdisApiDotNet", "NdisApiDotNet\NdisApiDotNet.csproj", "{40070452-8964-4B60-8986-0335B8DD4866}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NdisApiDotNetPacketDotNet", "NdisApiDotNetPacketDotNet\NdisApiDotNetPacketDotNet.csproj", "{6DE8F145-043C-40B9-800B-7E49D3F3D5BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NdisApiDemo", "NdisApiDemo\NdisApiDemo.csproj", "{4BC70C52-468D-463E-B8CC-E72D6F28C690}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NdisApiDemo", "NdisApiDemo\NdisApiDemo.csproj", "{4BC70C52-468D-463E-B8CC-E72D6F28C690}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

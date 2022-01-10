@@ -25,5 +25,11 @@ namespace NdisApiDotNet.Native
         [DllImport("kernel32.dll", EntryPoint = "CopyMemory")]
         [SuppressUnmanagedCodeSecurity]
         internal static extern void CopyMemory(IntPtr dest, IntPtr src, uint count);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool Wow64DisableWow64FsRedirection(ref IntPtr ptr);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool Wow64RevertWow64FsRedirection(IntPtr ptr);
     }
 }

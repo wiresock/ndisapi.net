@@ -8,20 +8,20 @@
 // ----------------------------------------------
 
 
+using NdisApiDotNet.Native;
 using System;
 using System.Runtime.InteropServices;
-using NdisApiDotNet.Native;
 
 namespace NdisApiDotNet
 {
-    public class NdisApiHelper : IDisposable
+    public class NdisAPIHelper : IDisposable
     {
         private readonly PinnedManagedArrayAllocator<byte> _pinnedManagedArrayAllocator;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NdisApiHelper"/> class.
+        /// Initializes a new instance of the <see cref="NdisAPIHelper"/> class.
         /// </summary>
-        public NdisApiHelper()
+        public NdisAPIHelper()
         {
             _pinnedManagedArrayAllocator = new PinnedManagedArrayAllocator<byte>();
             GC.KeepAlive(_pinnedManagedArrayAllocator);
@@ -38,11 +38,11 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="destination">The destination.</param>
-        public void CloneEthRequest(ref Native.NdisApi.ETH_REQUEST source, ref Native.NdisApi.ETH_REQUEST destination)
+        public static void CloneEthRequest(ref EthRequest source, ref EthRequest destination)
         {
             destination.hAdapterHandle = source.hAdapterHandle;
 
-            Kernel32.CopyMemory(destination._ethPacket._buffer, source._ethPacket._buffer, (uint) Native.NdisApi.IntermediateBufferSize);
+            Kernel32.CopyMemory(destination._ethPacket._buffer, source._ethPacket._buffer, (uint)Consts.IntermediateBufferSize);
         }
 
         /// <summary>
@@ -50,14 +50,13 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="destination">The destination.</param>
-        public void CloneEthMRequest(ref Native.NdisApi.ETH_M_REQUEST source, ref Native.NdisApi.ETH_M_REQUEST destination)
+        public static void CloneEthMRequest(ref EthMRequest source, ref EthMRequest destination)
         {
             destination.hAdapterHandle = source.hAdapterHandle;
             destination.dwPacketsSuccess = source.dwPacketsSuccess;
             destination.dwPacketsNumber = source.dwPacketsNumber;
 
-            for (int i = 0; i < source.dwPacketsSuccess; i++)
-                Kernel32.CopyMemory(destination._ethPacket[i]._buffer, source._ethPacket[i]._buffer, (uint) Native.NdisApi.IntermediateBufferSize);
+            for (int i = 0; i < source.dwPacketsSuccess; i++) Kernel32.CopyMemory(destination._ethPacket[i]._buffer, source._ethPacket[i]._buffer, (uint)Consts.IntermediateBufferSize);
         }
 
         /// <summary>
@@ -65,28 +64,28 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="destination">The destination.</param>
-        public unsafe void CloneUnsafeEthMRequest(ref Native.NdisApi.ETH_M_REQUEST_U* source, ref Native.NdisApi.ETH_M_REQUEST_U* destination)
+        public unsafe void CloneUnsafeEthMRequest(ref EthMRequestUnsafe* source, ref EthMRequestUnsafe* destination)
         {
             destination->hAdapterHandle = source->hAdapterHandle;
             destination->dwPacketsSuccess = source->dwPacketsSuccess;
             destination->dwPacketsNumber = source->dwPacketsNumber;
 
-            var requestPackets = source->GetPackets();
-            var nextPackets = destination->GetPackets();
+            EthPacket[] requestPackets = source->GetPackets();
+            EthPacket[] nextPackets = destination->GetPackets();
 
-            for (int i = 0; i < source->dwPacketsSuccess; i++)
-                Kernel32.CopyMemory(nextPackets[i]._buffer, requestPackets[i]._buffer, (uint) Native.NdisApi.IntermediateBufferSize);
+            for (int i = 0; i < source->dwPacketsSuccess; i++) Kernel32.CopyMemory(nextPackets[i]._buffer, requestPackets[i]._buffer, (uint)Consts.IntermediateBufferSize);
         }
 
         /// <summary>
         /// Clones the specified <see cref="source" />.
         /// </summary>
         /// <param name="source">The source.</param>
-        /// <returns><see cref="Native.NdisApi.ETH_REQUEST" />.</returns>
-        public Native.NdisApi.ETH_REQUEST CloneEthRequest(ref Native.NdisApi.ETH_REQUEST source)
+        /// <returns><see cref="EthRequest" />.</returns>
+        public EthRequest CloneEthRequest(ref EthRequest source)
         {
-            var destination = CreateEthRequest();
+            EthRequest destination = CreateEthRequest();
             CloneEthRequest(ref source, ref destination);
+
             return destination;
         }
 
@@ -94,11 +93,12 @@ namespace NdisApiDotNet
         /// Clones the specified <see cref="source" />.
         /// </summary>
         /// <param name="source">The source.</param>
-        /// <returns><see cref="Native.NdisApi.ETH_M_REQUEST" />.</returns>
-        public Native.NdisApi.ETH_M_REQUEST CloneEthMRequest(ref Native.NdisApi.ETH_M_REQUEST source)
+        /// <returns><see cref="EthMRequest" />.</returns>
+        public EthMRequest CloneEthMRequest(ref EthMRequest source)
         {
-            var destination = CreateEthMRequest();
+            EthMRequest destination = CreateEthMRequest();
             CloneEthMRequest(ref source, ref destination);
+
             return destination;
         }
 
@@ -106,11 +106,12 @@ namespace NdisApiDotNet
         /// Clones the specified <see cref="source" />.
         /// </summary>
         /// <param name="source">The request.</param>
-        /// <returns><see cref="Native.NdisApi.ETH_M_REQUEST_U" />.</returns>
-        public unsafe Native.NdisApi.ETH_M_REQUEST_U* CloneUnsafeEthMRequest(ref Native.NdisApi.ETH_M_REQUEST_U* source)
+        /// <returns><see cref="EthMRequestUnsafe" />.</returns>
+        public unsafe EthMRequestUnsafe* CloneUnsafeEthMRequest(ref EthMRequestUnsafe* source)
         {
-            var destination = CreateUnsafeEthMRequest(source->dwPacketsNumber);
+            EthMRequestUnsafe* destination = CreateUnsafeEthMRequest(source->dwPacketsNumber);
             CloneUnsafeEthMRequest(ref source, ref destination);
+
             return destination;
         }
 
@@ -118,94 +119,91 @@ namespace NdisApiDotNet
         /// Zeroes the specified request.
         /// </summary>
         /// <param name="request">The request.</param>
-        public void ZeroEthRequest(ref Native.NdisApi.ETH_REQUEST request)
+        public static void ZeroEthRequest(ref EthRequest request)
         {
             request.hAdapterHandle = IntPtr.Zero;
-            Kernel32.ZeroMemory(request._ethPacket._buffer, Native.NdisApi.IntermediateBufferSize);
+            Kernel32.ZeroMemory(request._ethPacket._buffer, Consts.IntermediateBufferSize);
         }
 
         /// <summary>
         /// Zeroes the specified request.
         /// </summary>
         /// <param name="request">The request.</param>
-        public void ZeroEthMRequest(ref Native.NdisApi.ETH_M_REQUEST request)
+        public static void ZeroEthMRequest(ref EthMRequest request)
         {
             request.hAdapterHandle = IntPtr.Zero;
 
-            for (int i = 0; i < request.dwPacketsNumber; i++)
-                Kernel32.ZeroMemory(request._ethPacket[i]._buffer, Native.NdisApi.IntermediateBufferSize);
+            for (int i = 0; i < request.dwPacketsNumber; i++) Kernel32.ZeroMemory(request._ethPacket[i]._buffer, Consts.IntermediateBufferSize);
         }
 
         /// <summary>
         /// Zeroes the specified request.
         /// </summary>
         /// <param name="request">The request.</param>
-        public unsafe void ZeroUnsafeEthMRequest(ref Native.NdisApi.ETH_M_REQUEST_U* request)
+        public unsafe void ZeroUnsafeEthMRequest(ref EthMRequestUnsafe* request)
         {
             request->hAdapterHandle = IntPtr.Zero;
-            var packets = request->GetPackets();
+            EthPacket[] packets = request->GetPackets();
 
-            for (int i = 0; i < request->dwPacketsNumber; i++)
-                Kernel32.ZeroMemory(packets[i]._buffer, Native.NdisApi.IntermediateBufferSize);
+            for (int i = 0; i < request->dwPacketsNumber; i++) Kernel32.ZeroMemory(packets[i]._buffer, Consts.IntermediateBufferSize);
         }
 
         /// <summary>
-        /// Creates a new <see cref="Native.NdisApi.ETH_REQUEST" />.
+        /// Creates a new <see cref="EthRequest" />.
         /// </summary>
         /// <remarks>The adapter handle still needs to be set.</remarks>
         /// <returns>NativeMethods.ETH_REQUEST.</returns>
-        public Native.NdisApi.ETH_REQUEST CreateEthRequest()
+        public EthRequest CreateEthRequest()
         {
-            return new Native.NdisApi.ETH_REQUEST
+            return new EthRequest
             {
-                _ethPacket = 
+                _ethPacket =
                 {
-                    _buffer = _pinnedManagedArrayAllocator.AllocateArray(Native.NdisApi.IntermediateBufferSize)
+                    _buffer = _pinnedManagedArrayAllocator.AllocateArray(Consts.IntermediateBufferSize)
                 }
             };
         }
 
         /// <summary>
-        /// Creates a new <see cref="Native.NdisApi.ETH_M_REQUEST" />.
+        /// Creates a new <see cref="EthMRequest" />.
         /// </summary>
         /// <remarks>The adapter handle still needs to be set.</remarks>
         /// <returns>NativeMethods.ETH_M_REQUEST_256.</returns>
-        public Native.NdisApi.ETH_M_REQUEST CreateEthMRequest()
+        public EthMRequest CreateEthMRequest()
         {
-            var ethPackets = new Native.NdisApi.ETH_M_REQUEST
+            EthMRequest ethPackets = new EthMRequest
             {
-                _ethPacket = new Native.NdisApi.NDISRD_ETH_Packet[Native.NdisApi.EthMRequestEthPacketSize],
-                dwPacketsNumber = Native.NdisApi.EthMRequestEthPacketSize
+                _ethPacket = new EthPacket[Consts.EthMRequestEthPacketSize],
+                dwPacketsNumber = Consts.EthMRequestEthPacketSize
             };
 
-            for (var i = 0; i < Native.NdisApi.EthMRequestEthPacketSize; i++)
-                ethPackets._ethPacket[i]._buffer = _pinnedManagedArrayAllocator.AllocateArray(Native.NdisApi.IntermediateBufferSize);
+            for (int i = 0; i < Consts.EthMRequestEthPacketSize; i++) ethPackets._ethPacket[i]._buffer = _pinnedManagedArrayAllocator.AllocateArray(Consts.IntermediateBufferSize);
 
             return ethPackets;
-        }       
-        
+        }
+
         /// <summary>
-        /// Creates a new <see cref="Native.NdisApi.ETH_M_REQUEST_U" />.
+        /// Creates a new <see cref="EthMRequestUnsafe" />.
         /// </summary>
         /// <param name="packetSize">Size of the packet.</param>
         /// <returns>NativeMethods.ETH_M_REQUEST_U.</returns>
         /// <remarks>The adapter handle still needs to be set.</remarks>
-        public unsafe Native.NdisApi.ETH_M_REQUEST_U* CreateUnsafeEthMRequest(uint packetSize)
+        public unsafe EthMRequestUnsafe* CreateUnsafeEthMRequest(uint packetSize)
         {
-            var totalNdisPacketSize = packetSize * Native.NdisApi.NdisRdEthPacketSize;
-            var requestSize = Native.NdisApi.EthMRequestUSize + totalNdisPacketSize;
+            long totalNdisPacketSize = packetSize * Consts.NdisRdEthPacketSize;
+            long requestSize = Consts.EthMRequestUSize + totalNdisPacketSize;
 
-            var pinnedRequestPtr = _pinnedManagedArrayAllocator.AllocateArray((int)requestSize);
-            var ethMRequestUnsafe = (Native.NdisApi.ETH_M_REQUEST_U*)pinnedRequestPtr;
+            IntPtr pinnedRequestPtr = _pinnedManagedArrayAllocator.AllocateArray((int)requestSize);
+            EthMRequestUnsafe* ethMRequestUnsafe = (EthMRequestUnsafe*)pinnedRequestPtr;
             ethMRequestUnsafe->dwPacketsNumber = packetSize;
 
-            var ndisrdEthPackets = new Native.NdisApi.NDISRD_ETH_Packet[packetSize];
+            EthPacket[] ndisrdEthPackets = new EthPacket[packetSize];
 
             for (int i = 0; i < packetSize; i++)
             {
-                ndisrdEthPackets[i] = new Native.NdisApi.NDISRD_ETH_Packet
+                ndisrdEthPackets[i] = new EthPacket
                 {
-                    _buffer = _pinnedManagedArrayAllocator.AllocateArray(Native.NdisApi.IntermediateBufferSize)
+                    _buffer = _pinnedManagedArrayAllocator.AllocateArray(Consts.IntermediateBufferSize)
                 };
             }
 
@@ -215,18 +213,18 @@ namespace NdisApiDotNet
         }
 
         /// <summary>
-        /// Creates a new <see cref="Native.NdisApi.PACKET_OID_DATA" />.
+        /// Creates a new <see cref="PACKET_OID_DATA" />.
         /// </summary>
         /// <remarks>The adapter handle still needs to be set.</remarks>
         /// <returns>NativeMethods.PACKET_OID_DATA.</returns>
-        public unsafe Native.NdisApi.PACKET_OID_DATA CreatePacketOidData(uint dataSize)
+        public unsafe PacketOID CreatePacketOidData(uint dataSize)
         {
-            var totalSize = Native.NdisApi.PacketOidDataSize + dataSize;
-            var data = new byte[totalSize];
-            var pinnedData = GCHandle.Alloc(data, GCHandleType.Pinned);
-            var pinnedDataPtr = pinnedData.AddrOfPinnedObject();
+            long totalSize = Consts.PacketOidDataSize + dataSize;
+            byte[] data = new byte[totalSize];
+            GCHandle pinnedData = GCHandle.Alloc(data, GCHandleType.Pinned);
+            IntPtr pinnedDataPtr = pinnedData.AddrOfPinnedObject();
 
-            var packetOidData = (Native.NdisApi.PACKET_OID_DATA*) pinnedDataPtr;
+            PacketOID* packetOidData = (PacketOID*)pinnedDataPtr;
             packetOidData->SetData(new byte[dataSize]);
             packetOidData->_length = dataSize;
 
@@ -235,44 +233,53 @@ namespace NdisApiDotNet
             return *packetOidData;
         }
 
-        /// <summary>
-        /// Creates a new <see cref="Native.NdisApi.STATIC_FILTER_TABLE_U" />.
-        /// </summary>
-        /// <param name="filterSize">Size of the filter.</param>
-        /// <returns><see cref="Native.NdisApi.STATIC_FILTER_TABLE_U" />.</returns>
-        public unsafe Native.NdisApi.STATIC_FILTER_TABLE_U* CreateUnsafeStaticFilterTable(uint filterSize)
-        {
-            var totalFilterSize = filterSize * Native.NdisApi.StaticFilterUSize;
-            var requestSize = Native.NdisApi.StaticFilterTableUStaticFiltersOffset + totalFilterSize;
+        ///// <summary>
+        ///// Creates a new <see cref="StaticFilterTableUnsafe" />.
+        ///// </summary>
+        ///// <param name="filterSize">Size of the filter.</param>
+        ///// <returns><see cref="StaticFilterTableUnsafe" />.</returns>
+        //public unsafe StaticFilterTableUnsafe* CreateUnsafeStaticFilterTable(uint filterSize)
+        //{
+        //    long totalFilterSize = filterSize * Consts.StaticFilterUSize;
+        //    long requestSize = Consts.StaticFilterTableUStaticFiltersOffset + totalFilterSize;
 
-            var pinnedRequestPtr = _pinnedManagedArrayAllocator.AllocateArray((int) requestSize);
-            var staticFilterTableU = (Native.NdisApi.STATIC_FILTER_TABLE_U*) pinnedRequestPtr;
-            staticFilterTableU->m_TableSize = filterSize;
+        //    IntPtr pinnedRequestPtr = _pinnedManagedArrayAllocator.AllocateArray((int)requestSize);
+        //    StaticFilterTableUnsafe* staticFilterTableU = (StaticFilterTableUnsafe*)pinnedRequestPtr;
+        //    staticFilterTableU->m_TableSize = filterSize;
 
-            var staticFilterUs = new Native.NdisApi.STATIC_FILTER_U[filterSize];
-            for (int i = 0; i < filterSize; i++)
-                staticFilterUs[i] = new Native.NdisApi.STATIC_FILTER_U();
+        //    StaticFilterUnsafe[] staticFilterUs = new StaticFilterUnsafe[filterSize];
+        //    for (int i = 0; i < filterSize; i++)
+        //        staticFilterUs[i] = new StaticFilterUnsafe();
 
-            staticFilterTableU->SetStaticFilters(staticFilterUs);
+        //    staticFilterTableU->SetStaticFilters(staticFilterUs);
 
-            return staticFilterTableU;
-        }
+        //    return staticFilterTableU;
+        //}
 
         /// <summary>
         /// Gets the underlying pinned array for the specified <see cref="ptr" />.
         /// </summary>
         /// <param name="ptr">The pointer.</param>
-        /// <returns><see cref="System.Byte" />s.</returns>
+        /// <returns><see cref="byte" />s.</returns>
         public byte[] GetPinnedArray(IntPtr ptr)
         {
             return _pinnedManagedArrayAllocator.GetArray(ptr);
         }
 
+        ///// <summary>
+        ///// Disposes the specified object.
+        ///// </summary>
+        ///// <param name="obj">The object.</param>
+        //public unsafe void DisposeObject(StaticFilterTableUnsafe* obj)
+        //{
+        //    _pinnedManagedArrayAllocator.FreeArray((IntPtr)obj);
+        //}
+
         /// <summary>
         /// Disposes the specified object.
         /// </summary>
         /// <param name="obj">The object.</param>
-        public unsafe void DisposeObject(Native.NdisApi.STATIC_FILTER_TABLE_U* obj)
+        public unsafe void DisposeObject(EthMRequestUnsafe* obj)
         {
             _pinnedManagedArrayAllocator.FreeArray((IntPtr)obj);
         }
@@ -281,16 +288,7 @@ namespace NdisApiDotNet
         /// Disposes the specified object.
         /// </summary>
         /// <param name="obj">The object.</param>
-        public unsafe void DisposeObject(Native.NdisApi.ETH_M_REQUEST_U* obj)
-        {
-            _pinnedManagedArrayAllocator.FreeArray((IntPtr)obj);
-        }
-
-        /// <summary>
-        /// Disposes the specified object.
-        /// </summary>
-        /// <param name="obj">The object.</param>
-        public void DisposeObject(Native.NdisApi.ETH_REQUEST obj)
+        public void DisposeObject(EthRequest obj)
         {
             _pinnedManagedArrayAllocator.FreeArray(obj._ethPacket._buffer);
         }
@@ -299,10 +297,9 @@ namespace NdisApiDotNet
         /// Disposes the specified object.
         /// </summary>
         /// <param name="obj">The object.</param>
-        public void DisposeObject(Native.NdisApi.ETH_M_REQUEST obj)
+        public void DisposeObject(EthMRequest obj)
         {
-            foreach (var packet in obj._ethPacket)
-                _pinnedManagedArrayAllocator.FreeArray(packet._buffer);
+            foreach (EthPacket packet in obj._ethPacket) _pinnedManagedArrayAllocator.FreeArray(packet._buffer);
         }
     }
 }
