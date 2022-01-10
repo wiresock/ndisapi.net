@@ -27,7 +27,7 @@ namespace NdisApiDemo
             NdisAPI filter = NdisAPI.Open();
             if (!filter.IsValid) throw new ApplicationException("Cannot load driver.");
 
-            Console.WriteLine($"Loaded driver: {filter.GetVersion()}.");
+            Console.WriteLine($"Loaded driver: {NdisAPI.GetVersion()}.");
 
             StaticFilterTable filterTable = new StaticFilterTable(0);
             filterTable.Add(FilterAction.Redirect, new TCPUDPFilter(FilterFlags.Source, 6672));

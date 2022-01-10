@@ -38,7 +38,7 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="destination">The destination.</param>
-        public void CloneEthRequest(ref EthRequest source, ref EthRequest destination)
+        public static void CloneEthRequest(ref EthRequest source, ref EthRequest destination)
         {
             destination.hAdapterHandle = source.hAdapterHandle;
 
@@ -50,7 +50,7 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="source">The source.</param>
         /// <param name="destination">The destination.</param>
-        public void CloneEthMRequest(ref EthMRequest source, ref EthMRequest destination)
+        public static void CloneEthMRequest(ref EthMRequest source, ref EthMRequest destination)
         {
             destination.hAdapterHandle = source.hAdapterHandle;
             destination.dwPacketsSuccess = source.dwPacketsSuccess;
@@ -119,7 +119,7 @@ namespace NdisApiDotNet
         /// Zeroes the specified request.
         /// </summary>
         /// <param name="request">The request.</param>
-        public void ZeroEthRequest(ref EthRequest request)
+        public static void ZeroEthRequest(ref EthRequest request)
         {
             request.hAdapterHandle = IntPtr.Zero;
             Kernel32.ZeroMemory(request._ethPacket._buffer, NdisApi.IntermediateBufferSize);
@@ -129,7 +129,7 @@ namespace NdisApiDotNet
         /// Zeroes the specified request.
         /// </summary>
         /// <param name="request">The request.</param>
-        public void ZeroEthMRequest(ref EthMRequest request)
+        public static void ZeroEthMRequest(ref EthMRequest request)
         {
             request.hAdapterHandle = IntPtr.Zero;
 

@@ -42,8 +42,7 @@ namespace NdisApiDotNet
         /// <inheritdoc />
         public void Dispose()
         {
-            if (_isCopied)
-                DeleteNetCfg(_path);
+            if (_isCopied) DeleteNetCfg(_path);
         }
 
         /// <summary>
@@ -53,7 +52,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if the specified component identifier is installed; otherwise, <c>false</c>.</returns>
         public bool IsInstalled(string componentId)
         {
-            return ExecuteCommand($"-v -q {componentId}").IndexOf("not installed", StringComparison.OrdinalIgnoreCase) == -1;
+            return !ExecuteCommand($"-v -q {componentId}").Contains("not installed", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace NdisApiDotNet
         /// <exception cref="ArgumentException">Should not contain a path. - infFileName</exception>
         public bool Install(string infFileName, string componentId, out bool afterReboot, out uint errorCode)
         {
-            if (infFileName.Contains("\\") || infFileName.Contains("//")) throw new ArgumentException("Should not contain a path.", nameof(infFileName));
+            if (infFileName.Contains('\\') || infFileName.Contains('/')) throw new ArgumentException("Should not contain a path.", nameof(infFileName));
 
 
             string result = ExecuteCommand($"-v -l {infFileName} -c s -i {componentId}");
@@ -158,12 +157,10 @@ namespace NdisApiDotNet
                 {
                     if (resource != null)
                     {
-                        using (FileStream file = new FileStream(path, FileMode.Create, FileAccess.Write))
-                        {
-                            resource.CopyTo(file);
+                        using FileStream file = new FileStream(path, FileMode.Create, FileAccess.Write);
+                        resource.CopyTo(file);
 
-                            return true;
-                        }
+                        return true;
                     }
                 }
 

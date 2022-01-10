@@ -25,7 +25,7 @@ namespace NdisApiDotNet.Native
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct StaticFilterTable : IList<StaticFilter> // STATIC_FILTER_TABLE
     {
-        const int MaxSize = 256;
+        public const int MaxSize = 256;
 
         internal uint m_TableSize;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = MaxSize)]
@@ -114,7 +114,7 @@ namespace NdisApiDotNet.Native
 
             StaticFilters[index] = item;
 
-            foreach(StaticFilter filter in skip)
+            foreach (StaticFilter filter in skip)
             {
                 if (++index >= StaticFilters.Length) break;
 
@@ -128,14 +128,14 @@ namespace NdisApiDotNet.Native
 
             IEnumerable<StaticFilter> skip = StaticFilters.Skip(index + 1);
 
-            foreach(StaticFilter filter in skip)
+            foreach (StaticFilter filter in skip)
             {
                 StaticFilters[index] = filter;
 
                 index++;
             }
 
-            while(index < StaticFilters.Length)
+            while (index < StaticFilters.Length)
             {
                 StaticFilters[index] = default;
 
@@ -162,7 +162,7 @@ namespace NdisApiDotNet.Native
 
         public bool Remove(StaticFilter item)
         {
-            var index = IndexOf(item);
+            int index = IndexOf(item);
 
             if (index < 0) return false;
 

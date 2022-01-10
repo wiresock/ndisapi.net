@@ -30,6 +30,20 @@ namespace NdisApiDotNet
         private EthMRequest _ethPacketsToAdapter;
         private EthMRequest _ethPacketsToMstcp;
 
+        // TODO: Try to make this work with embedded ndisapi.dll for single-file publishing.
+        /*static NdisAPI()
+        {
+            NativeLibrary.SetDllImportResolver(typeof(NdisApi).Assembly, ImportResolver);
+        }
+
+        private static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            IntPtr libHandle = IntPtr.Zero;
+            if (libraryName == NdisApi.DllName) NativeLibrary.TryLoad(NdisApi.DllName, assembly, DllImportSearchPath.SafeDirectories, out libHandle);
+
+            return libHandle;
+        }*/
+
         /// <summary>
         /// Initializes a new instance of the <see cref="NdisAPI" /> class.
         /// </summary>
@@ -81,7 +95,7 @@ namespace NdisApiDotNet
         /// <summary>
         /// Gets the maximum size of a packet in bytes.
         /// </summary>
-        public uint MaxPacketSize
+        public static uint MaxPacketSize
         {
             get
             {
@@ -104,9 +118,7 @@ namespace NdisApiDotNet
         /// <exception cref="Exception">Missing NDIS DLL</exception>
         public static NdisAPI Open(string driverName = "NDISRD")
         {
-            if (!NdisApiDllExists())
-                throw new Exception("Missing NDIS DLL");
-
+            if (!NdisApiDllExists()) throw new Exception("Missing NDIS DLL");
 
             byte[] driverNameBytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(driverName);
             SafeFilterDriverHandle handle = NdisApi.OpenFilterDriver(driverNameBytes);
@@ -148,12 +160,10 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
         /// <returns><see cref="Version" />.</returns>
-        public Version GetVersion(string fileName = "NDISRD")
+        public static Version GetVersion(string fileName = "NDISRD")
         {
             string filePath = Path.Combine(Environment.SystemDirectory, @"drivers\" + fileName + ".sys");
-            if (!File.Exists(filePath))
-                return new Version(0, 0, 0, 0);
-
+            if (!File.Exists(filePath)) return new Version(0, 0, 0, 0);
 
             FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(filePath);
             return new Version(fileVersionInfo.FileVersion);
@@ -173,12 +183,11 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="componentId">The component identifier.</param>
         /// <returns><c>true</c> if the driver is installed; otherwise, <c>false</c>.</returns>
-        public bool IsDriverInstalled(string componentId = "nt_ndisrd")
+        public static bool IsDriverInstalled(string componentId = "nt_ndisrd")
         {
-            using (NetCfg snetCfg = new NetCfg(""))
-            {
-                return snetCfg.IsInstalled(componentId);
-            }
+            using NetCfg snetCfg = new NetCfg("");
+
+            return snetCfg.IsInstalled(componentId);
         }
 
         /// <summary>
@@ -187,7 +196,7 @@ namespace NdisApiDotNet
         /// <param name="afterReboot">if set to <c>true</c>, requires a reboot for the changes to take affect.</param>
         /// <param name="errorCode">The error code.</param>
         /// <returns><c>true</c> if uninstalled, <c>false</c> otherwise.</returns>
-        public bool UninstallDriver(out bool afterReboot, out uint errorCode)
+        public static bool UninstallDriver(out bool afterReboot, out uint errorCode)
         {
             return UninstallDriver("nt_ndisrd", out afterReboot, out errorCode);
         }
@@ -199,12 +208,11 @@ namespace NdisApiDotNet
         /// <param name="afterReboot">if set to <c>true</c>, requires a reboot for the changes to take affect.</param>
         /// <param name="errorCode">The error code.</param>
         /// <returns><c>true</c> if uninstalled, <c>false</c> otherwise.</returns>
-        public bool UninstallDriver(string componentId, out bool afterReboot, out uint errorCode)
+        public static bool UninstallDriver(string componentId, out bool afterReboot, out uint errorCode)
         {
-            using (NetCfg snetCfg = new NetCfg(""))
-            {
-                return snetCfg.Uninstall(componentId, out afterReboot, out errorCode);
-            }
+            using NetCfg snetCfg = new NetCfg("");
+
+            return snetCfg.Uninstall(componentId, out afterReboot, out errorCode);
         }
 
         /// <summary>
@@ -214,7 +222,7 @@ namespace NdisApiDotNet
         /// <param name="afterReboot">if set to <c>true</c>, requires a reboot for the changes to take affect.</param>
         /// <param name="errorCode">The error code.</param>
         /// <returns><c>true</c> if installed, <c>false</c> otherwise.</returns>
-        public bool InstallDriver(string rootPath, out bool afterReboot, out uint errorCode)
+        public static bool InstallDriver(string rootPath, out bool afterReboot, out uint errorCode)
         {
             return InstallDriver(rootPath, "ndisrd_lwf.inf", "nt_ndisrd", out afterReboot, out errorCode);
         }
@@ -228,24 +236,19 @@ namespace NdisApiDotNet
         /// <param name="afterReboot">if set to <c>true</c>, requires a reboot for the changes to take affect.</param>
         /// <param name="errorCode">The error code.</param>
         /// <returns><c>true</c> if installed, <c>false</c> otherwise.</returns>
-        public bool InstallDriver(string rootPath, string infFileName, string componentId, out bool afterReboot, out uint errorCode)
+        public static bool InstallDriver(string rootPath, string infFileName, string componentId, out bool afterReboot, out uint errorCode)
         {
             string subFolder = "";
-            if (OperatingSystem.IsWin10())
-                subFolder = "win10";
-            else if (OperatingSystem.IsWin8() || OperatingSystem.IsWin81())
-                subFolder = "win8";
-            else if (OperatingSystem.IsWin7())
-                subFolder = "win7";
-            else if (OperatingSystem.IsWinVista())
-                subFolder = "vista";
+            if (OperatingSystem.IsWin10()) subFolder = "win10";
+            else if (OperatingSystem.IsWin8() || OperatingSystem.IsWin81()) subFolder = "win8";
+            else if (OperatingSystem.IsWin7()) subFolder = "win7";
+            else if (OperatingSystem.IsWinVista()) subFolder = "vista";
 
             string architecture = Environment.Is64BitOperatingSystem ? "amd64" : "i386";
             string path = Path.Combine(Path.Combine(rootPath, subFolder), architecture);
-            using (NetCfg snetCfg = new NetCfg(path))
-            {
-                return snetCfg.Install(infFileName, componentId, out afterReboot, out errorCode);
-            }
+            using NetCfg snetCfg = new NetCfg(path);
+
+            return snetCfg.Install(infFileName, componentId, out afterReboot, out errorCode);
         }
 
         /// <summary>
@@ -253,7 +256,7 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns><c>true</c> if installed, <c>false</c> otherwise.</returns>
-        public bool InstallCertificate(string path)
+        public static bool InstallCertificate(string path)
         {
             try
             {
@@ -275,7 +278,7 @@ namespace NdisApiDotNet
         /// Gets the MTU decrement.
         /// </summary>
         /// <returns>System.UInt32.</returns>
-        public uint GetMtuDecrement()
+        public static uint GetMtuDecrement()
         {
             return NdisApi.GetMTUDecrement();
         }
@@ -294,7 +297,7 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="mtuDecrement">The mtu decrement.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SetMtuDecrement(uint mtuDecrement)
+        public static bool SetMtuDecrement(uint mtuDecrement)
         {
             return NdisApi.SetMTUDecrement(mtuDecrement);
         }
@@ -303,7 +306,7 @@ namespace NdisApiDotNet
         /// Gets the adapters startup mode.
         /// </summary>
         /// <returns>System.UInt32.</returns>
-        public MSTCPFlags GetAdaptersStartupMode()
+        public static MSTCPFlags GetAdaptersStartupMode()
         {
             return NdisApi.GetAdaptersStartupMode();
         }
@@ -706,7 +709,7 @@ namespace NdisApiDotNet
                 _ethPacketsToAdapter.hAdapterHandle = ethMRequest->hAdapterHandle;
                 _ethPacketsToMstcp.hAdapterHandle = ethMRequest->hAdapterHandle;
 
-                packets = packets ?? ethMRequest->GetPackets();
+                packets ??= ethMRequest->GetPackets();
 
                 foreach (EthPacket packet in packets)
                 {
@@ -840,7 +843,7 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="flags">The flags.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        public bool SetAdaptersStartupMode(MSTCPFlags flags)
+        public static bool SetAdaptersStartupMode(MSTCPFlags flags)
         {
             return NdisApi.SetAdaptersStartupMode(flags);
         }

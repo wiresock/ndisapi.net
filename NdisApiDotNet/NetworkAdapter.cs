@@ -106,7 +106,7 @@ namespace NdisApiDotNet
         {
             string name = Encoding.ASCII.GetString(NameBytes);
             int i = name.IndexOf((char)0);
-            return i >= 0 ? name.Substring(0, i) : name;
+            return i >= 0 ? name[..i] : name;
         }
 
         /// <summary>

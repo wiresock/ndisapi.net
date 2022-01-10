@@ -17,7 +17,7 @@ using System.Security;
 // ReSharper disable CheckNamespace
 namespace NdisApiDotNet.Native
 {
-    public static partial class NdisApi
+    internal static class NdisApi
     {
         /// <summary>
         /// The file name of the Ndis Api DLL.
