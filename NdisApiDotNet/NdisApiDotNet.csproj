@@ -6,10 +6,11 @@
     <LangVersion>latest</LangVersion>
 	<DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <Company>NT Kernel</Company>
     <Description>Windows Packet Filter's NdisApi for .NET.</Description>
     <Authors>NT Kernel</Authors>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +25,15 @@
 
   <ItemGroup>
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ndisapi_x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ndisapi_x86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

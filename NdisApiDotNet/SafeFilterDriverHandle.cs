@@ -33,7 +33,7 @@ namespace NdisApiDotNet
         [SecurityCritical]
         protected override bool ReleaseHandle()
         {
-            Native.NdisApi.CloseFilterDriver(handle);
+            Native.Imports.CloseFilterDriver(handle);
 
             return true;
         }

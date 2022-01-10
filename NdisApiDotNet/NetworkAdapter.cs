@@ -10,6 +10,7 @@
 
 using NdisApiDotNet.Native;
 using System;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -19,27 +20,6 @@ namespace NdisApiDotNet
 {
     public class NetworkAdapter
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NetworkAdapter" /> class.
-        /// </summary>
-        /// <param name="handle">The handle.</param>
-        /// <param name="nameBytes">Name of the adapter in bytes.</param>
-        /// <param name="medium">The medium.</param>
-        /// <param name="address">The mac address.</param>
-        /// <param name="mtu">The mtu.</param>
-        public NetworkAdapter(IntPtr handle, byte[] nameBytes, NdisMedium medium, byte[] address, ushort mtu)
-        {
-            Handle = handle;
-            Mtu = mtu;
-            Medium = medium;
-
-            PhysicalAddress = new PhysicalAddress(address);
-
-            NameBytes = nameBytes;
-            Name = GetInternalName();
-            FriendlyName = GetFriendlyName();
-        }
-
         /// <summary>
         /// Gets the friendly name of the network adapter, as shown in Windows' control panel.
         /// </summary>
@@ -59,19 +39,7 @@ namespace NdisApiDotNet
         /// <summary>
         /// Gets a value indicating whether the network adapter is valid.
         /// </summary>
-        public bool IsValid
-        {
-            get
-            {
-                foreach (byte b in PhysicalAddress.GetAddressBytes())
-                {
-                    if (b != 0)
-                        return true;
-                }
-
-                return false;
-            }
-        }
+        public bool IsValid { get { return PhysicalAddress.GetAddressBytes().Any(b => b != 0); } }
 
         /// <summary>
         /// Gets the medium of the TCP adapter.
@@ -97,6 +65,27 @@ namespace NdisApiDotNet
         /// Gets the name of the network adapter in bytes.
         /// </summary>
         private byte[] NameBytes { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NetworkAdapter" /> class.
+        /// </summary>
+        /// <param name="handle">The handle.</param>
+        /// <param name="nameBytes">Name of the adapter in bytes.</param>
+        /// <param name="medium">The medium.</param>
+        /// <param name="address">The mac address.</param>
+        /// <param name="mtu">The mtu.</param>
+        public NetworkAdapter(IntPtr handle, byte[] nameBytes, NdisMedium medium, byte[] address, ushort mtu)
+        {
+            Handle = handle;
+            Mtu = mtu;
+            Medium = medium;
+
+            PhysicalAddress = new PhysicalAddress(address);
+
+            NameBytes = nameBytes;
+            Name = GetInternalName();
+            FriendlyName = GetFriendlyName();
+        }
 
         /// <summary>
         /// Gets the internal name.
@@ -134,7 +123,7 @@ namespace NdisApiDotNet
         {
             fixed (byte* adapterNamePtr = &adapterNameBytes[nameStart])
             {
-                byte[] friendlyNameBytes = new byte[NdisApi.ADAPTER_NAME_SIZE];
+                byte[] friendlyNameBytes = new byte[Consts.ADAPTER_NAME_SIZE];
                 string friendlyName = null;
                 bool success = false;
 
@@ -147,25 +136,24 @@ namespace NdisApiDotNet
                         if (majorVersion > 4)
                         {
                             // Windows 2000 or XP.
-                            success = NdisApi.ConvertWindows2000AdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
+                            success = Imports.ConvertWindows2000AdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
                         }
                         else if (majorVersion == 4)
                         {
                             // Windows NT 4.0.
-                            success = NdisApi.ConvertWindowsNTAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
+                            success = Imports.ConvertWindowsNTAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
                         }
                     }
                     else
                     {
                         // Windows 9x/ME.
-                        success = NdisApi.ConvertWindows9xAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
+                        success = Imports.ConvertWindows9xAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length);
                     }
 
                     if (success)
                     {
                         int indexOfZero = 0;
-                        while (indexOfZero < 256 && friendlyNameBytes[indexOfZero] != 0)
-                            ++indexOfZero;
+                        while (indexOfZero < 256 && friendlyNameBytes[indexOfZero] != 0) ++indexOfZero;
                         friendlyName = Encoding.Default.GetString(friendlyNameBytes, 0, indexOfZero);
                     }
                 }

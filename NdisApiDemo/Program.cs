@@ -9,6 +9,7 @@
 
 
 using NdisApiDotNet;
+using NdisApiDotNet.Filters;
 using NdisApiDotNet.Native;
 using NdisApiDotNetPacketDotNet.Extensions;
 using PacketDotNet;
@@ -30,8 +31,8 @@ namespace NdisApiDemo
             Console.WriteLine($"Loaded driver: {NdisAPI.GetVersion()}.");
 
             StaticFilterTable filterTable = new StaticFilterTable(0);
-            filterTable.Add(FilterAction.Redirect, new TCPUDPFilter(FilterFlags.Source, 6672));
-            filterTable.Add(FilterAction.Redirect, new TCPUDPFilter(FilterFlags.Destination, 6672));
+            filterTable.Add(FilterAction.Redirect, new TCPUDPFilter(FilterFields.Source, 6672));
+            filterTable.Add(FilterAction.Redirect, new TCPUDPFilter(FilterFields.Destination, 6672));
             StaticFilter f = filterTable.Add(FilterAction.Pass);
 
             /*Console.WriteLine(filterTable.Contains(f));

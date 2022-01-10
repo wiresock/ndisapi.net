@@ -11,7 +11,6 @@ using NdisApiDotNet;
 using NdisApiDotNet.Native;
 using PacketDotNet;
 using PacketDotNet.Utils;
-using NdisApi = NdisApiDotNet.Native.NdisApi;
 
 namespace NdisApiDotNetPacketDotNet.Extensions
 {
@@ -31,7 +30,7 @@ namespace NdisApiDotNetPacketDotNet.Extensions
                 try
                 {
                     byte[] pinnedArray = ndisApiHelper.GetPinnedArray(packet.Buffer);
-                    return new EthernetPacket(new ByteArraySegment(pinnedArray, NdisApi.IntermediateBufferBufferOffset, NdisApi.MAX_ETHER_FRAME));
+                    return new EthernetPacket(new ByteArraySegment(pinnedArray, Consts.IntermediateBufferBufferOffset, Consts.MAX_ETHER_FRAME));
                 }
                 catch
                 {

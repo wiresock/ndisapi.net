@@ -8,6 +8,7 @@
     <Company>NT Kernel</Company>
     <Description>Windows Packet Filter's NdisApi for .NET with added access around Packet.Net.</Description>
     <Authors>NT Kernel</Authors>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
