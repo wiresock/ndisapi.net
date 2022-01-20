@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="OperatingSystem.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System.Runtime.InteropServices;
 using NdisApiDotNet.Native;
@@ -16,58 +15,34 @@ namespace NdisApiDotNet
     internal static class OperatingSystem
     {
         /// <summary>
-        /// Determines whether this OS is Windows Vista.
-        /// </summary>
-        /// <returns><c>true</c> if this OS is Windows Vista; otherwise, <c>false</c>.</returns>
-        internal static bool IsWinVista()
-        {
-            var osversioninfoex = GetVersion();
-
-            return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 0;
-        }
-
-        /// <summary>
         /// Determines whether this OS is Windows 7.
         /// </summary>
         /// <returns><c>true</c> if this OS is Windows 7; otherwise, <c>false</c>.</returns>
-        internal static bool IsWin7()
+        public static bool IsWindows7()
         {
-            var osversioninfoex = GetVersion();
-
-            return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 1;
+            var osVersionInfoEx = GetVersion();
+            return osVersionInfoEx.dwMajorVersion == 6 && osVersionInfoEx.dwMinorVersion == 1;
         }
 
         /// <summary>
         /// Determines whether this OS is Windows 8.
         /// </summary>
         /// <returns><c>true</c> if this OS is Windows 8; otherwise, <c>false</c>.</returns>
-        internal static bool IsWin8()
+        public static bool IsWindows8()
         {
-            var osversioninfoex = GetVersion();
-
-            return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 2;
+            // Windows 8 + 8.1.
+            var osVersionInfoEx = GetVersion();
+            return osVersionInfoEx.dwMajorVersion == 6 && (osVersionInfoEx.dwMinorVersion == 2 || osVersionInfoEx.dwMinorVersion == 3);
         }
 
         /// <summary>
-        /// Determines whether this OS is Windows 8.1.
+        /// Determines whether this OS is Windows 10 or greater.
         /// </summary>
-        /// <returns><c>true</c> if this OS is Windows 8.1; otherwise, <c>false</c>.</returns>
-        internal static bool IsWin81()
+        /// <returns><c>true</c> if is Windows 10 or greater; otherwise, <c>false</c>.</returns>
+        public static bool IsWindows10OrGreater()
         {
-            var osversioninfoex = GetVersion();
-
-            return osversioninfoex.dwMajorVersion == 6 && osversioninfoex.dwMinorVersion == 3;
-        }
-
-        /// <summary>
-        /// Determines whether this OS is Windows 10.
-        /// </summary>
-        /// <returns><c>true</c> if this OS is Windows 10; otherwise, <c>false</c>.</returns>
-        internal static bool IsWin10()
-        {
-            var osversioninfoex = GetVersion();
-
-            return osversioninfoex.dwMajorVersion == 10 && osversioninfoex.dwMinorVersion == 0;
+            var osVersionInfoEx = GetVersion();
+            return osVersionInfoEx.dwMajorVersion >= 10;
         }
 
         /// <summary>
@@ -76,11 +51,11 @@ namespace NdisApiDotNet
         /// <returns><see cref="NtDll.OSVERSIONINFOEX" />.</returns>
         private static NtDll.OSVERSIONINFOEX GetVersion()
         {
-            var osversioninfoex = new NtDll.OSVERSIONINFOEX();
-            osversioninfoex.dwOSVersionInfoSize = (uint) Marshal.SizeOf(osversioninfoex);
-            NtDll.RtlGetVersion(ref osversioninfoex);
+            var osVersionInfoEx = new NtDll.OSVERSIONINFOEX();
+            osVersionInfoEx.dwOSVersionInfoSize = (uint) Marshal.SizeOf(osVersionInfoEx);
+            NtDll.RtlGetVersion(ref osVersionInfoEx);
 
-            return osversioninfoex;
+            return osVersionInfoEx;
         }
     }
 }

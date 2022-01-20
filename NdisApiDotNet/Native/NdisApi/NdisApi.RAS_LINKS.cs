@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.RAS_LINKS.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System.Runtime.InteropServices;
 
@@ -23,27 +22,21 @@ namespace NdisApiDotNet.Native
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct RAS_LINKS
         {
-            internal uint nNumberOfLinks;
+            /// <summary>
+            /// The number of RAS links.
+            /// </summary>
+            public uint nNumberOfLinks;
+
+            /// <summary>
+            /// The RAS links.
+            /// </summary>
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = RAS_LINKS_MAX)]
-            internal RAS_LINK_INFO[] _rasLinks;
+            public RAS_LINK_INFO[] RasLinks;
 
             /// <summary>
-            /// Gets or sets the number of RAS links.
+            /// The size of <see cref="RAS_LINKS" />.
             /// </summary>
-            public uint LinksCount
-            {
-                get => nNumberOfLinks;
-                set => nNumberOfLinks = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the RAS links.
-            /// </summary>
-            public RAS_LINK_INFO[] RasLinks
-            {
-                get => _rasLinks;
-                set => _rasLinks = value;
-            }
+            public static int Size = Marshal.SizeOf<RAS_LINKS>();
         }
     }
 }

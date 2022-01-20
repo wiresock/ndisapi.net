@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.ETH_REQUEST.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 using System.Runtime.InteropServices;
@@ -24,26 +23,20 @@ namespace NdisApiDotNet.Native
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct ETH_REQUEST
         {
-            internal IntPtr hAdapterHandle;
-            internal NDISRD_ETH_Packet _ethPacket;
+            /// <summary>
+            /// The adapter handle.
+            /// </summary>
+            public IntPtr hAdapterHandle;
 
             /// <summary>
-            /// Gets or sets the ether packet.
+            /// The <see cref="NDISRD_ETH_Packet" />.
             /// </summary>
-            public NDISRD_ETH_Packet Packet
-            {
-                get => _ethPacket;
-                set => _ethPacket = value;
-            }
+            public NDISRD_ETH_Packet EthPacket;
 
             /// <summary>
-            /// Gets or sets the adapter handle.
+            /// The size of <see cref="ETH_REQUEST" />.
             /// </summary>
-            public IntPtr AdapterHandle
-            {
-                get => hAdapterHandle;
-                set => hAdapterHandle = value;
-            }
+            public static int Size = Marshal.SizeOf<ETH_REQUEST>();
         }
     }
 }

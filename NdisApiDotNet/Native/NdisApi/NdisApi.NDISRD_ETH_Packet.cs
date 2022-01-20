@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.NDISRD_ETH_Packet.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 using System.Runtime.InteropServices;
@@ -19,48 +18,38 @@ namespace NdisApiDotNet.Native
     public static partial class NdisApi
     {
         /// <summary>
-        /// A container for INTERMEDIATE_BUFFER pointer.
+        /// A container for a <see cref="INTERMEDIATE_BUFFER" /> pointer.
         /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct NDISRD_ETH_Packet
         {
-            internal IntPtr _buffer;
-
             /// <summary>
-            /// Gets or sets the pointer to the INTERMEDIATE_BUFFER.
+            /// The pointer to the <see cref="INTERMEDIATE_BUFFER" /> or <see cref="INTERMEDIATE_BUFFER_VARIABLE" />.
             /// </summary>
-            public IntPtr Buffer
-            {
-                get => _buffer;
-                set => _buffer = value;
-            }
+            public IntPtr Buffer;
 
             /// <summary>
             /// Gets the intermediate buffer.
             /// </summary>
             /// <returns><see cref="INTERMEDIATE_BUFFER" />.</returns>
-            public INTERMEDIATE_BUFFER GetIntermediateBuffer()
+            public unsafe INTERMEDIATE_BUFFER* GetIntermediateBuffer()
             {
-                return Marshal.PtrToStructure<INTERMEDIATE_BUFFER>(_buffer);
+                return (INTERMEDIATE_BUFFER*) Buffer;
             }
 
             /// <summary>
-            /// Sets the intermediate buffer.
+            /// Gets the variable intermediate buffer.
             /// </summary>
-            /// <param name="intermediateBuffer">The intermediate buffer.</param>
-            public void SetIntermediateBuffer(INTERMEDIATE_BUFFER intermediateBuffer)
+            /// <returns><see cref="INTERMEDIATE_BUFFER_VARIABLE" />.</returns>
+            public unsafe INTERMEDIATE_BUFFER_VARIABLE* GetVariableIntermediateBuffer()
             {
-                Marshal.StructureToPtr(intermediateBuffer, _buffer, false);
+                return (INTERMEDIATE_BUFFER_VARIABLE*) Buffer;
             }
 
             /// <summary>
-            /// Gets the unsafe intermediate buffer.
+            /// The size of <see cref="NDISRD_ETH_Packet" />.
             /// </summary>
-            /// <returns><see cref="INTERMEDIATE_BUFFER_U" />.</returns>
-            public unsafe INTERMEDIATE_BUFFER_U* GetUnsafeIntermediateBuffer()
-            {
-                return (INTERMEDIATE_BUFFER_U*)_buffer;
-            }
+            public static int Size = Marshal.SizeOf<NDISRD_ETH_Packet>();
         }
     }
 }

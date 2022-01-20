@@ -4,27 +4,16 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Company>NT Kernel</Company>
+    <Authors>NT Kernel</Authors>
     <Description>Windows Packet Filter's NdisApi for .NET with added access around Packet.Net.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>NT Kernel</Authors>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>latest</LangVersion>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <LangVersion>7.1</LangVersion>
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="PacketDotNet">
-      <Version>0.20.1</Version>
-    </PackageReference>
+  <ItemGroup>
+    <PackageReference Include="PacketDotNet" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>

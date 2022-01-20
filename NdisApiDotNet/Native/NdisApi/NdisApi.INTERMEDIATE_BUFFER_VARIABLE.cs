@@ -1,5 +1,5 @@
 ﻿// ----------------------------------------------
-// <copyright file="NdisApi.INTERMEDIATE_BUFFER.cs" company="NT Kernel">
+// <copyright file="NdisApi.INTERMEDIATE_BUFFER_VARIABLE.cs" company="NT Kernel">
 //    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
@@ -22,7 +22,7 @@ namespace NdisApiDotNet.Native
         /// Contains packet buffer, packet NDIS flags, WinPkFilter specific flags.
         /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public unsafe struct INTERMEDIATE_BUFFER
+        public unsafe struct INTERMEDIATE_BUFFER_VARIABLE
         {
             /// <summary>
             /// The adapter handle and qlink union.
@@ -62,7 +62,7 @@ namespace NdisApiDotNet.Native
             /// <summary>
             /// The data buffer.
             /// </summary>
-            public fixed byte m_IBuffer[MAX_ETHER_FRAME];
+            public fixed byte m_IBuffer[1]; // This is an array of bytes, but this cannot be declared directly as it's a variable width.
 
             /// <summary>
             /// Gets or sets the adapter handle.
@@ -84,19 +84,9 @@ namespace NdisApiDotNet.Native
             public uint* Reserved => (uint*) Unsafe.AsPointer(ref m_Reserved[0]);
 
             /// <summary>
-            /// The offset of <see cref="Buffer" />.
+            /// The size of <see cref="INTERMEDIATE_BUFFER_VARIABLE" /> without the <see cref="Buffer" />.
             /// </summary>
-            public static IntPtr BufferOffset = Marshal.OffsetOf(typeof(INTERMEDIATE_BUFFER), nameof(m_IBuffer));
-
-            /// <summary>
-            /// The offset of <see cref="Reserved" />.
-            /// </summary>
-            public static IntPtr ReservedOffset = Marshal.OffsetOf(typeof(INTERMEDIATE_BUFFER), nameof(m_Reserved));
-
-            /// <summary>
-            /// The size of <see cref="INTERMEDIATE_BUFFER" />.
-            /// </summary>
-            public static int Size = Marshal.SizeOf<INTERMEDIATE_BUFFER>();
+            public static int SizeOfHeader = Marshal.SizeOf<INTERMEDIATE_BUFFER_VARIABLE>() - 1;
         }
     }
 }

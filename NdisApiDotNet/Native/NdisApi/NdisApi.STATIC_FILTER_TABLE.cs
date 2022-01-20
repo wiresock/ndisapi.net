@@ -1,14 +1,13 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.STATIC_FILTER_TABLE.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
 
-
-using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
@@ -22,34 +21,73 @@ namespace NdisApiDotNet.Native
         /// The static filters table to be passed to WinPkFilter driver.
         /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
-        public struct STATIC_FILTER_TABLE
+        public unsafe struct STATIC_FILTER_TABLE
         {
-            internal uint m_TableSize;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
-            internal STATIC_FILTER[] m_StaticFilters;
+            /// <summary>
+            /// The number of <see cref="STATIC_FILTER" /> entries.
+            /// </summary>
+            public uint m_TableSize;
 
             /// <summary>
-            /// Gets or sets the number of STATIC_FILTER entries.
+            /// The <see cref="STATIC_FILTER" />s.
             /// </summary>
-            public uint TableSize
+            public STATIC_FILTER m_StaticFilters; // This is an array of STATIC_FILTER, but this cannot be declared directly as it's a variable width.
+
+            /// <summary>
+            /// Gets the <see cref="STATIC_FILTER" />s.
+            /// </summary>
+            public STATIC_FILTER* StaticFilters => (STATIC_FILTER*) Unsafe.AsPointer(ref m_StaticFilters);
+
+            /// <summary>
+            /// Gets or sets the <see cref="STATIC_FILTER" /> at the specified index.
+            /// </summary>
+            /// <param name="index">The index.</param>
+            /// <returns><see cref="STATIC_FILTER" />.</returns>
+            public STATIC_FILTER this[int index]
             {
-                get => m_TableSize;
-                set => m_TableSize = value;
+                get => StaticFilters[index];
+                set => StaticFilters[index] = value;
             }
 
             /// <summary>
-            /// Gets or sets the static filters.
+            /// Gets the static filters.
             /// </summary>
-            /// <remarks>
-            /// For convenience the size of the array is fixed to 256 entries, feel free to change this value if you need more filter
-            /// entries.
-            /// </remarks>
-            public STATIC_FILTER[] StaticFilters
+            /// <returns><see cref="STATIC_FILTER" />s.</returns>
+            public STATIC_FILTER[] GetStaticFilters()
             {
-                get => m_StaticFilters;
-                set => m_StaticFilters = value;
+                var staticFiltersSize = m_TableSize;
+
+                var staticFilters = new STATIC_FILTER[staticFiltersSize];
+                var staticFiltersPtr = StaticFilters;
+
+                for (int i = 0; i < staticFiltersSize; i++)
+                {
+                    staticFilters[i] = staticFiltersPtr[i];
+                }
+
+                return staticFilters;
             }
+
+            /// <summary>
+            /// Sets the static filters.
+            /// </summary>
+            /// <param name="filters">The filters.</param>
+            public void SetStaticFilters(STATIC_FILTER[] filters)
+            {
+                var staticFiltersPtr = StaticFilters;
+
+                for (int i = 0; i < filters.Length; i++)
+                {
+                    staticFiltersPtr[i] = filters[i];
+                }
+
+                m_TableSize = (uint) filters.Length;
+            }
+
+            /// <summary>
+            /// The size of <see cref="STATIC_FILTER_TABLE" /> without the <see cref="StaticFilters" />.
+            /// </summary>
+            public static int SizeOfHeader = Marshal.SizeOf<STATIC_FILTER_TABLE>() - STATIC_FILTER.Size;
         }
     }
 }

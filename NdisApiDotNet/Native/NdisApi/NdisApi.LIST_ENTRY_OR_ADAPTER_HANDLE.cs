@@ -1,11 +1,14 @@
 ﻿// ----------------------------------------------
-// <copyright file="NdisApi.IP_ADDRESS_V6_TYPE.cs" company="NT Kernel">
+// <copyright file="NdisApi.LIST_ENTRY_OR_ADAPTER_HANDLE.cs" company="NT Kernel">
 //    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
+
+using System;
+using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
@@ -14,20 +17,20 @@ namespace NdisApiDotNet.Native
 {
     public static partial class NdisApi
     {
-        /// <summary>
-        /// The type of IPv6 address.
-        /// </summary>
-        public enum IP_ADDRESS_V6_TYPE : uint
+        [StructLayout(LayoutKind.Explicit)]
+        public struct LIST_ENTRY_OR_ADAPTER_HANDLE
         {
             /// <summary>
-            /// The IPv6 subnet type.
+            /// The qlink entry.
             /// </summary>
-            IP_SUBNET_V6_TYPE = 0x00000001,
+            [FieldOffset(0)]
+            public LIST_ENTRY m_qLink;
 
             /// <summary>
-            /// The IPv6 range type.
+            /// The adapter handle.
             /// </summary>
-            IP_RANGE_V6_TYPE = 0x00000002
+            [FieldOffset(0)]
+            public IntPtr m_hAdapter;
         }
     }
 }

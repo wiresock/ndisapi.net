@@ -1,71 +1,44 @@
 ﻿// ----------------------------------------------
 // <copyright file="PinnedManagedArrayAllocator.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
 
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using NdisApiDotNet.Native;
 
 namespace NdisApiDotNet
 {
     internal sealed class PinnedManagedArrayAllocator<T> : IDisposable where T : struct
     {
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
         private bool _isDisposed;
         private Dictionary<IntPtr, T[]> _ptrToArrays;
         private Dictionary<IntPtr, GCHandle> _ptrToGcHandles;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PinnedManagedArrayAllocator{T}"/> class.
+        /// Initializes a new instance of the <see cref="PinnedManagedArrayAllocator{T}" /> class.
         /// </summary>
-        internal PinnedManagedArrayAllocator()
+        public PinnedManagedArrayAllocator()
         {
             _ptrToArrays = new Dictionary<IntPtr, T[]>();
             _ptrToGcHandles = new Dictionary<IntPtr, GCHandle>();
         }
 
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            lock (_lock)
-            {
-                if (_isDisposed)
-                    return;
-
-
-                if (_ptrToGcHandles != null)
-                {
-                    foreach (var gcHandle in _ptrToGcHandles.Values)
-                        gcHandle.Free();
-
-                    _ptrToGcHandles = null;
-                }
-
-                _ptrToArrays = null;
-                _isDisposed = true;
-            }
-        }
-
         /// <summary>
         /// Allocates the array.
         /// </summary>
-        /// <param name="count">The count.</param>
+        /// <param name="length">The length of the array.</param>
         /// <returns><see cref="IntPtr" />.</returns>
-        internal IntPtr AllocateArray(int count)
+        public IntPtr AllocateArray(int length)
         {
-            var array = new T[count];
+            var array = new T[length];
             var gcHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
             var ptr = gcHandle.AddrOfPinnedObject();
-
-            Kernel32.ZeroMemory(ptr, count);
 
             lock (_lock)
             {
@@ -80,18 +53,22 @@ namespace NdisApiDotNet
         /// Frees the array.
         /// </summary>
         /// <param name="arrayPointer">The array pointer.</param>
-        internal void FreeArray(IntPtr arrayPointer)
+        public void FreeArray(IntPtr arrayPointer)
         {
             lock (_lock)
             {
-                var array = _ptrToGcHandles.FirstOrDefault(x => x.Key == arrayPointer);
-                if (array.Equals(default))
-                    return;
+                foreach (var pair in _ptrToGcHandles)
+                {
+                    if (pair.Key == arrayPointer)
+                    {
+                        pair.Value.Free();
 
+                        _ptrToGcHandles.Remove(arrayPointer);
+                        _ptrToArrays.Remove(arrayPointer);
 
-                array.Value.Free();
-                _ptrToGcHandles.Remove(arrayPointer);
-                _ptrToArrays.Remove(arrayPointer);
+                        return;
+                    }
+                }
             }
         }
 
@@ -100,11 +77,36 @@ namespace NdisApiDotNet
         /// </summary>
         /// <param name="arrayPointer">The array pointer.</param>
         /// <returns><see cref="T" />s.</returns>
-        internal T[] GetArray(IntPtr arrayPointer)
+        public T[] GetArray(IntPtr arrayPointer)
         {
             lock (_lock)
             {
                 return _ptrToArrays[arrayPointer];
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            lock (_lock)
+            {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
+                if (_ptrToGcHandles != null)
+                {
+                    foreach (var gcHandle in _ptrToGcHandles.Values)
+                    {
+                        gcHandle.Free();
+                    }
+
+                    _ptrToGcHandles = null;
+                    _ptrToArrays = null;
+                }
+
+                _isDisposed = true;
             }
         }
     }

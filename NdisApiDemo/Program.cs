@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="Program.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 using System.Collections.Generic;
@@ -25,41 +24,43 @@ namespace NdisApiDemo
         {
             var filter = NdisApi.Open();
             if (!filter.IsValid)
+            {
                 throw new ApplicationException("Cannot load driver.");
+            }
 
+            Console.WriteLine($"Version: {filter.GetVersion()}.");
+            Console.WriteLine($"Loaded driver: {filter.IsDriverLoaded()}.");
 
-            Console.WriteLine($"Loaded driver: {filter.GetVersion()}.");
-            
             // Create and set event for the adapters.
-            var waitHandlesCollection = new List<ManualResetEvent>();
-            var tcpAdapters = new List<NetworkAdapter>();
+            var waitHandlesCollection = new List<AutoResetEvent>();
+
             foreach (var networkAdapter in filter.GetNetworkAdapters())
             {
                 if (networkAdapter.IsValid)
                 {
                     var success = filter.SetAdapterMode(networkAdapter,
-                                                            NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_TUNNEL |
-                                                            NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_LOOPBACK_FILTER |
-                                                            NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_LOOPBACK_BLOCK);
+                                                        NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_TUNNEL |
+                                                        NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_LOOPBACK_FILTER |
+                                                        NdisApiDotNet.Native.NdisApi.MSTCP_FLAGS.MSTCP_FLAG_LOOPBACK_BLOCK);
 
-                    var manualResetEvent = new ManualResetEvent(false);
+                    var resetEvent = new AutoResetEvent(false);
 
-                    success &= filter.SetPacketEvent(networkAdapter, manualResetEvent.SafeWaitHandle);
+                    success &= filter.SetPacketEvent(networkAdapter, resetEvent.SafeWaitHandle);
 
                     if (success)
                     {
-                        Console.WriteLine($"Added {networkAdapter.FriendlyName}.");
+                        Console.WriteLine($"Added {networkAdapter.FriendlyName} - {networkAdapter.Handle}.");
 
-                        waitHandlesCollection.Add(manualResetEvent);
-                        tcpAdapters.Add(networkAdapter);
+                        waitHandlesCollection.Add(resetEvent);
                     }
                 }
             }
 
-            var waitHandlesManualResetEvents = waitHandlesCollection.Cast<ManualResetEvent>().ToArray();
+            var waitHandlesAutoResetEvents = waitHandlesCollection.Cast<AutoResetEvent>().ToArray();
             var waitHandles = waitHandlesCollection.Cast<WaitHandle>().ToArray();
 
-            var t1 = Task.Factory.StartNew(() => PassThruThread(filter, waitHandles, tcpAdapters.ToArray(), waitHandlesManualResetEvents));
+            var t1 = Task.Factory.StartNew(() => PassThruUnsortedThread(filter, waitHandles, waitHandlesAutoResetEvents));
+            //var t1 = Task.Factory.StartNew(() => PassThruThread(filter, waitHandles, filter.GetNetworkAdapters().ToArray(), waitHandlesAutoResetEvents));
             Task.WaitAll(t1);
 
             Console.Read();
@@ -72,37 +73,80 @@ namespace NdisApiDemo
         /// <param name="waitHandles">The wait handles.</param>
         /// <param name="networkAdapters">The network adapters.</param>
         /// <param name="waitHandlesManualResetEvents">The wait handles manual reset events.</param>
-        private static void PassThruThread(NdisApi filter, WaitHandle[] waitHandles, IReadOnlyList<NetworkAdapter> networkAdapters, IReadOnlyList<ManualResetEvent> waitHandlesManualResetEvents)
+        private static unsafe void PassThruThread(NdisApi filter, WaitHandle[] waitHandles, IReadOnlyList<NetworkAdapter> networkAdapters, IReadOnlyList<AutoResetEvent> waitHandlesManualResetEvents)
         {
-            var ndisApiHelper = new NdisApiHelper();
-
-            var ethPackets = ndisApiHelper.CreateEthMRequest();
+            var ethPackets = filter.CreateEthMRequest(32);
 
             while (true)
             {
                 var handle = WaitHandle.WaitAny(waitHandles);
-                ethPackets.AdapterHandle = networkAdapters[handle].Handle;
+                ethPackets->hAdapterHandle = networkAdapters[handle].Handle;
 
-                while (filter.ReadPackets(ref ethPackets))
+                while (filter.ReadPackets(ethPackets))
                 {
-                    var packets = ethPackets.Packets;
-                    for (int i = 0; i < ethPackets.PacketsCount; i++)
+                    var packets = ethPackets->Packets;
+                    for (int i = 0; i < ethPackets->dwPacketsSuccess; i++)
                     {
-                        var ethPacket = packets[i].GetEthernetPacket(ndisApiHelper);
+                        var ethPacket = packets[i].GetEthernetPacket(filter);
                         if (ethPacket.PayloadPacket is IPv4Packet iPv4Packet)
                         {
                             if (iPv4Packet.PayloadPacket is TcpPacket tcpPacket)
                             {
-                                Console.WriteLine($"{iPv4Packet.SourceAddress}:{tcpPacket.SourcePort} -> {iPv4Packet.DestinationAddress}:{tcpPacket.DestinationPort}.");
+                                //Console.WriteLine($"{iPv4Packet.SourceAddress}:{tcpPacket.SourcePort} -> {iPv4Packet.DestinationAddress}:{tcpPacket.DestinationPort}.");
                             }
                         }
                     }
 
-                    filter.SendPackets(ref ethPackets);
-                    ethPackets.PacketsCount = 0;
+                    filter.SendPackets(ethPackets);
+                    ethPackets->dwPacketsSuccess = 0;
                 }
+            }
+        }
 
-                waitHandlesManualResetEvents[handle].Reset();
+        /// <summary>
+        /// Starts a pass thru thread.
+        /// </summary>
+        /// <param name="filter">The filter.</param>
+        /// <param name="waitHandles">The wait handles.</param>
+        /// <param name="waitHandlesManualResetEvents">The wait handles manual reset events.</param>
+        private static unsafe void PassThruUnsortedThread
+        (
+            NdisApi filter,
+            WaitHandle[] waitHandles,
+            IReadOnlyList<AutoResetEvent> waitHandlesManualResetEvents)
+        {
+            const int bufferSize = 32;
+
+            var buffers = new IntPtr[bufferSize];
+            for (int i = 0; i < buffers.Length; i++)
+            {
+                buffers[i] = (IntPtr)filter.CreateIntermediateBuffer();
+            }
+
+            while (true)
+            {
+                WaitHandle.WaitAny(waitHandles);
+                uint packetsSuccess = 0;
+
+                while (filter.ReadPacketsUnsorted(buffers, bufferSize, ref packetsSuccess))
+                {
+                    for (int i = 0; i < packetsSuccess; i++)
+                    {
+                        var ethPacket = buffers[i].GetEthernetPacket(filter);
+                        if (ethPacket.PayloadPacket is IPv4Packet iPv4Packet)
+                        {
+                            if (iPv4Packet.PayloadPacket is TcpPacket tcpPacket)
+                            {
+                                //Console.WriteLine($"{iPv4Packet.SourceAddress}:{tcpPacket.SourcePort} -> {iPv4Packet.DestinationAddress}:{tcpPacket.DestinationPort}.");
+                            }
+                        }
+                    }
+
+                    if (packetsSuccess > 0)
+                    {
+                        filter.SendPacketsUnsorted(buffers, packetsSuccess, out var numPacketsSuccess);
+                    }
+                }
             }
         }
     }

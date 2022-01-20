@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.IP_V4_FILTER_FIELDS.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 
@@ -17,6 +16,9 @@ namespace NdisApiDotNet.Native
 {
     public static partial class NdisApi
     {
+        /// <summary>
+        /// The IPv4 filter fields.
+        /// </summary>
         [Flags]
         public enum IP_V4_FILTER_FIELDS : uint
         {

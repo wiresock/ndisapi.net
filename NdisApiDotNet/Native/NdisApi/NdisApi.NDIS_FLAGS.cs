@@ -1,6 +1,6 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.NDIS_FLAGS.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
@@ -11,13 +11,14 @@ using System;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
+// ReSharper disable IdentifierTypo
 
 namespace NdisApiDotNet.Native
 {
     public static partial class NdisApi
     {
         /// <summary>
-        /// The NDIS flags.
+        /// The NDIS flags as defined in ndis.h.
         /// </summary>
         [Flags]
         public enum NDIS_FLAGS : uint

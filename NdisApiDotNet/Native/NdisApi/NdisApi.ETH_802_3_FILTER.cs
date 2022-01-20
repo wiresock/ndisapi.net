@@ -1,14 +1,12 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.ETH_802_3_FILTER.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
 
-
-using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
@@ -22,78 +20,87 @@ namespace NdisApiDotNet.Native
         /// Ethernet 802.3 filter type.
         /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct ETH_802_3_FILTER
+        public unsafe struct ETH_802_3_FILTER
         {
-            internal ETH_802_3_FLAGS m_ValidFields;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = ETHER_ADDR_LENGTH)]
-            internal byte[] m_SrcAddress;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = ETHER_ADDR_LENGTH)]
-            internal byte[] m_DestAddress;
-            internal ushort m_Protocol;
-            internal ushort _padding;
+            /// <summary>
+            /// Which fields below contain valid values and should be matched against the packet.
+            /// </summary>
+            public ETH_802_3_FLAGS m_ValidFields;
 
             /// <summary>
-            /// Gets or sets which of the fields below contain valid values and should be matched against the packet.
+            /// The source address.
             /// </summary>
-            public ETH_802_3_FLAGS ValidFields
+            public fixed byte m_SrcAddress[ETHER_ADDR_LENGTH];
+
+            /// <summary>
+            /// The destination address.
+            /// </summary>
+            public fixed byte m_DestAddress[ETHER_ADDR_LENGTH];
+
+            /// <summary>
+            /// The ether type.
+            /// </summary>
+            public ushort m_Protocol;
+
+            /// <summary>
+            /// The padding, this is currently unused.
+            /// </summary>
+            public ushort Padding;
+
+            /// <summary>
+            /// Gets the source address.
+            /// </summary>
+            /// <returns><see cref="byte" />s.</returns>
+            public byte[] GetSourceAddress()
             {
-                get => m_ValidFields;
-                set => m_ValidFields = value;
+                var bytes = new byte[ETHER_ADDR_LENGTH];
+
+                for (int i = 0; i < ETHER_ADDR_LENGTH; i++)
+                {
+                    bytes[i] = m_SrcAddress[i];
+                }
+
+                return bytes;
             }
 
             /// <summary>
-            /// Gets or sets the source MAC address.
+            /// Gets the destination address.
             /// </summary>
-            public byte[] SourceAddressBytes
+            /// <returns><see cref="byte" />s.</returns>
+            public byte[] GetDestinationAddress()
             {
-                get => m_SrcAddress;
-                set => m_SrcAddress = value;
+                var bytes = new byte[ETHER_ADDR_LENGTH];
+
+                for (int i = 0; i < ETHER_ADDR_LENGTH; i++)
+                {
+                    bytes[i] = m_DestAddress[i];
+                }
+
+                return bytes;
             }
 
             /// <summary>
-            /// Gets or sets the source MAC address.
+            /// Sets the source address.
             /// </summary>
-            public PhysicalAddress SourceAddress
+            /// <param name="bytes">The bytes.</param>
+            public void SetSourceAddress(byte[] bytes)
             {
-                get => new PhysicalAddress(SourceAddressBytes);
-                set => SourceAddressBytes = value.GetAddressBytes();
+                for (int i = 0; i < ETHER_ADDR_LENGTH; i++)
+                {
+                    m_SrcAddress[i] = bytes[i];
+                }
             }
 
             /// <summary>
-            /// Gets or sets the destination MAC address.
+            /// Sets the destination address.
             /// </summary>
-            public byte[] DestinationAddressBytes
+            /// <param name="bytes">The bytes.</param>
+            public void SetDestinationAddress(byte[] bytes)
             {
-                get => m_DestAddress;
-                set => m_DestAddress = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the destination MAC address.
-            /// </summary>
-            public PhysicalAddress DestinationAddress
-            {
-                get => new PhysicalAddress(DestinationAddressBytes);
-                set => DestinationAddressBytes = value.GetAddressBytes();
-            }
-
-            /// <summary>
-            /// Gets or sets the ether type.
-            /// </summary>
-            public ushort Protocol
-            {
-                get => m_Protocol;
-                set => m_Protocol = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the padding.
-            /// </summary>
-            /// <remarks>This is currently unused.</remarks>
-            public ushort Padding
-            {
-                get => _padding;
-                set => _padding = value;
+                for (int i = 0; i < ETHER_ADDR_LENGTH; i++)
+                {
+                    m_DestAddress[i] = bytes[i];
+                }
             }
         }
     }

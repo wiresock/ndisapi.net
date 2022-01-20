@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.IN6_ADDR.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 using System.Collections.Generic;
@@ -29,7 +28,7 @@ namespace NdisApiDotNet.Native
             /// <summary>
             /// Initializes a new instance of the <see cref="IN6_ADDR" /> struct.
             /// </summary>
-            /// <param name="ipAddress">The ip address.</param>
+            /// <param name="ipAddress">The IP address.</param>
             public IN6_ADDR(IPAddress ipAddress) : this(ipAddress.GetAddressBytes())
             { }
 
@@ -39,11 +38,12 @@ namespace NdisApiDotNet.Native
             /// <param name="byteArray">The byte array.</param>
             /// <exception cref="ArgumentOutOfRangeException">byteArray</exception>
             public IN6_ADDR(IReadOnlyList<byte> byteArray)
-                    : this()
+                : this()
             {
                 if (byteArray.Count < 16 || byteArray.Count > 16)
+                {
                     throw new ArgumentOutOfRangeException(nameof(byteArray));
-
+                }
 
                 b0 = byteArray[0];
                 b1 = byteArray[1];
