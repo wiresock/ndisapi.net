@@ -1,11 +1,13 @@
 ﻿// ----------------------------------------------
-// <copyright file="NdisApi.IP_ADDRESS_V6_TYPE.cs" company="NT Kernel">
+// <copyright file="NdisApi.FAST_IO_WRITE_UNION_SPLIT.cs" company="NT Kernel">
 //    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
+
+using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
@@ -14,20 +16,18 @@ namespace NdisApiDotNet.Native
 {
     public static partial class NdisApi
     {
-        /// <summary>
-        /// The type of IPv6 address.
-        /// </summary>
-        public enum IP_ADDRESS_V6_TYPE : uint
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct FAST_IO_WRITE_UNION_SPLIT
         {
             /// <summary>
-            /// The IPv6 subnet type.
+            /// The number of packets.
             /// </summary>
-            IP_SUBNET_V6_TYPE = 0x00000001,
+            public volatile ushort number_of_packets;
 
             /// <summary>
-            /// The IPv6 range type.
+            /// The flag specifying whether write is in progress.
             /// </summary>
-            IP_RANGE_V6_TYPE = 0x00000002
+            public volatile ushort write_in_progress_flag;
         }
     }
 }

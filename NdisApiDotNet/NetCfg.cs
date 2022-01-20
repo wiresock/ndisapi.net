@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NetCfg.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 using System.Diagnostics;
@@ -16,34 +15,35 @@ using System.Reflection;
 
 namespace NdisApiDotNet
 {
-    public class NetCfg : IDisposable
+    internal class NetCfg : IDisposable
     {
-        private readonly bool _isCopied;
         private readonly string _path;
-        private readonly string _startPath;
+        private readonly string _workingDirectory;
+        private bool _copied;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NetCfg"/> class.
+        /// Initializes a new instance of the <see cref="NetCfg" /> class.
         /// </summary>
         /// <param name="path">The path.</param>
         /// <exception cref="ArgumentException">Should not contain the executable name. - path</exception>
         public NetCfg(string path)
         {
             if (path.Contains("netcfg.exe"))
+            {
                 throw new ArgumentException("Should not contain the executable name.", nameof(path));
+            }
 
-
-            _startPath = path;
+            _workingDirectory = path;
             _path = Path.Combine(path, "netcfg.exe");
-
-            _isCopied = CopyNetCfg(_path);
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            if (_isCopied)
-                DeleteNetCfg(_path);
+            if (_copied)
+            {
+                DeleteNetCfg();
+            }
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if the specified component identifier is installed; otherwise, <c>false</c>.</returns>
         public bool IsInstalled(string componentId)
         {
-            return ExecuteCommand($"-v -q {componentId}").IndexOf("not installed", StringComparison.OrdinalIgnoreCase) == -1;
+            return ExecuteCommand($"-v -q {componentId}", out var output) && output.IndexOf("not installed", StringComparison.OrdinalIgnoreCase) == -1;
         }
 
         /// <summary>
@@ -64,15 +64,21 @@ namespace NdisApiDotNet
         /// <param name="afterReboot">if set to <c>true</c>, requires a reboot for the changes to take affect.</param>
         /// <param name="errorCode">The error code.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        /// <exception cref="ArgumentException">Should not contain a path. - infFileName</exception>
         public bool Install(string infFileName, string componentId, out bool afterReboot, out uint errorCode)
         {
             if (infFileName.Contains("\\") || infFileName.Contains("//"))
+            {
                 throw new ArgumentException("Should not contain a path.", nameof(infFileName));
+            }
 
+            if (ExecuteCommand($"-v -l {infFileName} -c s -i {componentId}", out var output))
+            {
+                return ParseCommandOutput(output, out afterReboot, out errorCode);
+            }
 
-            var result = ExecuteCommand($"-v -l {infFileName} -c s -i {componentId}");
-            return ParseShowHrMessage(result, out afterReboot, out errorCode);
+            afterReboot = false;
+            errorCode = uint.MaxValue;
+            return false;
         }
 
         /// <summary>
@@ -84,107 +90,138 @@ namespace NdisApiDotNet
         /// <returns><c>true</c> if uninstalled, <c>false</c> otherwise.</returns>
         public bool Uninstall(string componentId, out bool afterReboot, out uint errorCode)
         {
-            var result = ExecuteCommand($"-v -u {componentId}");
-            return ParseShowHrMessage(result, out afterReboot, out errorCode);
+            if (ExecuteCommand($"-v -u {componentId}", out var output))
+            {
+                return ParseCommandOutput(output, out afterReboot, out errorCode);
+            }
+
+            afterReboot = false;
+            errorCode = uint.MaxValue;
+            return false;
         }
 
         /// <summary>
-        /// Parses the result of the <c>ShowHrMessage</c> function.
+        /// Parses the output of <see cref="ExecuteCommand" />.
         /// </summary>
-        /// <param name="result">The result.</param>
-        /// <param name="afterReboot">if set to <c>true</c>, requires a reboot for the changes to take affect.</param>
+        /// <param name="output">The output.</param>
+        /// <param name="afterReboot">If set to <c>true</c>, requires a reboot for the changes to take affect.</param>
         /// <param name="errorCode">The error code.</param>
         /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
-        private static bool ParseShowHrMessage(string result, out bool afterReboot, out uint errorCode)
+        private static bool ParseCommandOutput(string output, out bool afterReboot, out uint errorCode)
         {
-            if (result.IndexOf("failed", StringComparison.OrdinalIgnoreCase) > -1 || result.IndexOf("Error code", StringComparison.OrdinalIgnoreCase) > -1)
+            // For example:
+            //
+            // Trying to install nt_ndisrd ...
+            // ... failed. Error code: 0x80070002.
+
+            var errorCodeIndex = output.IndexOf("error code:", StringComparison.OrdinalIgnoreCase);
+            if (errorCodeIndex > -1 || output.IndexOf("failed", StringComparison.OrdinalIgnoreCase) > -1)
             {
-                if (result.IndexOf("Error code", StringComparison.OrdinalIgnoreCase) > -1)
+                if (errorCodeIndex > -1)
                 {
-                    var hex = result.Substring(result.IndexOf("Error code:", StringComparison.OrdinalIgnoreCase) + 11).Trim().Replace("0x", String.Empty);
-                    errorCode = UInt32.Parse(hex, NumberStyles.AllowHexSpecifier);
+                    var hex = output.Substring(errorCodeIndex + 11).Trim().Replace("0x", string.Empty);
+                    errorCode = uint.Parse(hex, NumberStyles.AllowHexSpecifier);
                 }
                 else
+                {
                     errorCode = 0;
+                }
 
                 afterReboot = false;
                 return false;
             }
 
             errorCode = 0;
-            afterReboot = result.IndexOf("reboot your computer", StringComparison.OrdinalIgnoreCase) > -1;
+            afterReboot = output.IndexOf("reboot your computer", StringComparison.OrdinalIgnoreCase) > -1;
 
             return true;
         }
 
         /// <summary>
-        /// Executes the command.
+        /// Executes the specified <paramref name="command" />.
         /// </summary>
         /// <param name="command">The command.</param>
-        /// <returns><see cref="System.String" />.</returns>
-        private string ExecuteCommand(string command)
+        /// <param name="output">The output of the command.</param>
+        /// <returns><see cref="string" />.</returns>
+        private bool ExecuteCommand(string command, out string output)
         {
-            var process = new Process
+            try
             {
-                StartInfo = new ProcessStartInfo
+                if (!_copied && !(_copied = CopyNetCfg()))
                 {
-                    FileName = _path,
-                    Arguments = command,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    WorkingDirectory = _startPath
+                    output = null;
+                    return false;
                 }
-            };
-            process.Start();
-            var result = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
-            return result;
+
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = _path,
+                        Arguments = command,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true,
+                        WorkingDirectory = _workingDirectory
+                    }
+                };
+
+                process.Start();
+                output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+
+                return true;
+            }
+            catch
+            {
+                output = null;
+                return false;
+            }
         }
 
         /// <summary>
-        /// Copies the net cfg.
+        /// Copies the net cfg executable.
         /// </summary>
-        /// <param name="path">The path.</param>
-        private static bool CopyNetCfg(string path)
+        private bool CopyNetCfg()
         {
             try
             {
                 var fileName = Environment.Is64BitOperatingSystem ? "snetcfg.amd64.exe" : "snetcfg.i386.exe";
-                using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("NdisApiDotNet.Resources." + fileName))
+
+                using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("NdisApiDotNet.Resources." + fileName);
+
+                if (resource != null)
                 {
-                    if (resource != null)
-                    {
-                        using (var file = new FileStream(path, FileMode.Create, FileAccess.Write))
-                        {
-                            resource.CopyTo(file);
-                            return true;
-                        }
-                    }
+                    using var file = new FileStream(_path, FileMode.OpenOrCreate, FileAccess.Write);
+
+                    resource.CopyTo(file);
+
+                    return true;
                 }
 
                 return false;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }
         }
 
         /// <summary>
-        /// Deletes the net cfg.
+        /// Deletes the net cfg executable.
         /// </summary>
-        /// <param name="path">The path.</param>
-        private static void DeleteNetCfg(string path)
+        private void DeleteNetCfg()
         {
             try
             {
-                if (File.Exists(path))
-                    File.Delete(path);
+                if (File.Exists(_path))
+                {
+                    File.Delete(_path);
+                }
             }
-            catch (Exception)
+            catch
             {
-                // ignored
+                // ignored.
             }
         }
     }

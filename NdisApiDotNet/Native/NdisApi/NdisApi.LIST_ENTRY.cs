@@ -1,49 +1,31 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.LIST_ENTRY.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
 
-
 using System;
 using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
+// ReSharper disable IdentifierTypo
 
 namespace NdisApiDotNet.Native
 {
     public static partial class NdisApi
     {
         /// <summary>
-        /// List entry type.
+        /// The <see cref="LIST_ENTRY"/> as defined in ntdef.h.
         /// </summary>
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct LIST_ENTRY
         {
-            internal IntPtr _flink;
-            internal IntPtr _blink;
-
-            /// <summary>
-            /// Gets or sets the blink.
-            /// </summary>
-            public IntPtr Blink
-            {
-                get => _blink;
-                set => _blink = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the flink.
-            /// </summary>
-            public IntPtr Flink
-            {
-                get => _flink;
-                set => _flink = value;
-            }
+            public IntPtr Flink;
+            public IntPtr Blink;
         }
     }
 }

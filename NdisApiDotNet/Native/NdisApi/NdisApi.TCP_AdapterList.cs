@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.TCP_AdapterList.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 using System.Runtime.InteropServices;
@@ -24,71 +23,40 @@ namespace NdisApiDotNet.Native
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct TCP_AdapterList
         {
-            internal uint m_nAdapterCount;
+            /// <summary>
+            /// The number of adapters that are actually set.
+            /// </summary>
+            public uint m_nAdapterCount;
+
+            /// <summary>
+            /// The adapter names.
+            /// </summary>
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = ADAPTER_LIST_SIZE * ADAPTER_NAME_SIZE)]
-            internal byte[] m_szAdapterNameList;
+            public byte[] m_szAdapterNameList;
+
+            /// <summary>
+            /// The adapter handle.
+            /// </summary>
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = ADAPTER_LIST_SIZE)]
-            internal IntPtr[] m_nAdapterHandle;
+            public IntPtr[] m_nAdapterHandle;
+
+            /// <summary>
+            /// The adapter mediums.
+            /// </summary>
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = ADAPTER_LIST_SIZE)]
-            internal NDIS_MEDIUM[] m_nAdapterMediumList;
+            public NDIS_MEDIUM[] m_nAdapterMediumList;
+
+            /// <summary>
+            /// The currently configured ethernet address.
+            /// </summary>
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = ADAPTER_LIST_SIZE * ETHER_ADDR_LENGTH)]
-            internal byte[] m_czCurrentAddress;
+            public byte[] m_czCurrentAddress;
+
+            /// <summary>
+            /// The current adapter MTU.
+            /// </summary>
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = ADAPTER_LIST_SIZE)]
-            internal ushort[] m_usMTU;
-
-            /// <summary>
-            /// Gets or sets the number of adapters that are actually set.
-            /// </summary>
-            public uint AdapterCount
-            {
-                get => m_nAdapterCount;
-                set => m_nAdapterCount = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the current adapter MTU.
-            /// </summary>
-            public ushort[] MTU
-            {
-                get => m_usMTU;
-                set => m_usMTU = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the currently configured ethernet address.
-            /// </summary>
-            public byte[] CurrentAddress
-            {
-                get => m_czCurrentAddress;
-                set => m_czCurrentAddress = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the adapter mediums.
-            /// </summary>
-            public NDIS_MEDIUM[] AdapterMediums
-            {
-                get => m_nAdapterMediumList;
-                set => m_nAdapterMediumList = value;
-            }
-
-            /// <summary>
-            /// Gets or sets the adapter handles that are the handle for any adapter operation.
-            /// </summary>
-            public IntPtr[] AdapterHandle
-            {
-                get => m_nAdapterHandle;
-                set => m_nAdapterHandle = value;
-            }
-
-            /// <summary>
-            /// Array of adapter names.
-            /// </summary>
-            public byte[] AdapterNames
-            {
-                get => m_szAdapterNameList;
-                set => m_szAdapterNameList = value;
-            }
+            public ushort[] m_usMTU;
         }
     }
 }

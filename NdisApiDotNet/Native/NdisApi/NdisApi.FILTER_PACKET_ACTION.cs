@@ -1,6 +1,6 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.FILTER_PACKET_ACTION.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
@@ -30,7 +30,7 @@ namespace NdisApiDotNet.Native
             FILTER_PACKET_DROP = 0x00000002,
 
             /// <summary>
-            /// Redirect packet to WinpkFilter client application
+            /// Redirect packet to the client application.
             /// </summary>
             FILTER_PACKET_REDIRECT = 0x00000003
         }

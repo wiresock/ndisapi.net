@@ -1,12 +1,11 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.NDIS_PACKET_TYPE.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
 // </copyright>
 // ----------------------------------------------
-
 
 using System;
 
@@ -18,7 +17,7 @@ namespace NdisApiDotNet.Native
     public static partial class NdisApi
     {
         /// <summary>
-        /// The NDIS packet type.
+        /// The NDIS packet type as defined in ndis.h.
         /// </summary>
         [Flags]
         public enum NDIS_PACKET_TYPE : uint
@@ -46,6 +45,7 @@ namespace NdisApiDotNet.Native
             NDIS_PACKET_TYPE_802_11_DIRECTED_CTRL = 0x00800000,
             NDIS_PACKET_TYPE_802_11_BROADCAST_CTRL = 0x01000000,
             NDIS_PACKET_TYPE_802_11_PROMISCUOUS_CTRL = 0x02000000,
+
             NDIS_PACKET_TYPE_ALL_802_11_FILTERS = NDIS_PACKET_TYPE_DIRECTED |
                                                   NDIS_PACKET_TYPE_MULTICAST |
                                                   NDIS_PACKET_TYPE_ALL_MULTICAST |

@@ -1,5 +1,5 @@
 ﻿// ----------------------------------------------
-// <copyright file="NdisApi.ETH_802_3_FLAGS.cs" company="NT Kernel">
+// <copyright file="NdisApi.FAST_IO_SECTION_HEADER.cs" company="NT Kernel">
 //    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
@@ -7,7 +7,7 @@
 // </copyright>
 // ----------------------------------------------
 
-using System;
+using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
@@ -16,26 +16,23 @@ namespace NdisApiDotNet.Native
 {
     public static partial class NdisApi
     {
-        /// <summary>
-        /// The Ethernet 802.3 filter flags.
-        /// </summary>
-        [Flags]
-        public enum ETH_802_3_FLAGS : uint
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct FAST_IO_SECTION_HEADER
         {
             /// <summary>
-            /// The Ethernet 802.3 source address.
+            /// The write union.
             /// </summary>
-            ETH_802_3_SRC_ADDRESS = 0x00000001,
+            public FAST_IO_WRITE_UNION fast_io_write_union;
 
             /// <summary>
-            /// The Ethernet 802.3 destination address.
+            /// The flag specifying whether read is in progress.
             /// </summary>
-            ETH_802_3_DEST_ADDRESS = 0x00000002,
+            public volatile int read_in_progress_flag;
 
             /// <summary>
-            /// The Ethernet 802.3 protocol.
+            /// The size of <see cref="FAST_IO_SECTION_HEADER" />.
             /// </summary>
-            ETH_802_3_PROTOCOL = 0x00000004
+            public static int Size = Marshal.SizeOf<FAST_IO_SECTION_HEADER>();
         }
     }
 }

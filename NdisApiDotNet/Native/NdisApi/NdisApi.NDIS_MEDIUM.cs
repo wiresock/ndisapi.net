@@ -1,6 +1,6 @@
 ﻿// ----------------------------------------------
 // <copyright file="NdisApi.NDIS_MEDIUM.cs" company="NT Kernel">
-//    Copyright (c) 2000-2018 NT Kernel Resources / Contributors
+//    Copyright (c) NT Kernel Resources / Contributors
 //                      All Rights Reserved.
 //                    http://www.ntkernel.com
 //                      ndisrd@ntkernel.com
@@ -9,17 +9,18 @@
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
+// ReSharper disable IdentifierTypo
 
 namespace NdisApiDotNet.Native
 {
     public static partial class NdisApi
     {
         /// <summary>
-        /// The NDIS medium type.
+        /// The NDIS medium type as defined in ntddndis.h.
         /// </summary>
         public enum NDIS_MEDIUM : uint
         {
-            // Custom added default.
+            // Added to make it possible to specify a default.
             NdisMediumDefault = 0,
 
             NdisMedium802_3 = 0,
