@@ -13,17 +13,16 @@ using System.Security;
 
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+[SuppressUnmanagedCodeSecurity]
+internal static class Kernel32
 {
-    [SuppressUnmanagedCodeSecurity]
-    internal static class Kernel32
-    {
-        private const string DllName = "kernel32.dll";
+    private const string DllName = "kernel32.dll";
 
-        [DllImport(DllName, EntryPoint = "RtlZeroMemory")]
-        public static extern void ZeroMemory(IntPtr destination, int length);
+    [DllImport(DllName, EntryPoint = "RtlZeroMemory")]
+    public static extern void ZeroMemory(IntPtr destination, int length);
 
-        [DllImport(DllName, EntryPoint = "RtlCopyMemory")]
-        public static extern void CopyMemory(IntPtr dest, IntPtr src, uint count);
-    }
+    [DllImport(DllName, EntryPoint = "RtlCopyMemory")]
+    public static extern void CopyMemory(IntPtr dest, IntPtr src, uint count);
 }

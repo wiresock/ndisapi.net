@@ -10,29 +10,28 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    /// <summary>
+    /// The filter packet action.
+    /// </summary>
+    public enum FILTER_PACKET_ACTION : uint
     {
         /// <summary>
-        /// The filter packet action.
+        /// Pass packet if it matches the filter.
         /// </summary>
-        public enum FILTER_PACKET_ACTION : uint
-        {
-            /// <summary>
-            /// Pass packet if it matches the filter.
-            /// </summary>
-            FILTER_PACKET_PASS = 0x00000001,
+        FILTER_PACKET_PASS = 0x00000001,
 
-            /// <summary>
-            /// Drop packet if it matches the filter.
-            /// </summary>
-            FILTER_PACKET_DROP = 0x00000002,
+        /// <summary>
+        /// Drop packet if it matches the filter.
+        /// </summary>
+        FILTER_PACKET_DROP = 0x00000002,
 
-            /// <summary>
-            /// Redirect packet to the client application.
-            /// </summary>
-            FILTER_PACKET_REDIRECT = 0x00000003
-        }
+        /// <summary>
+        /// Redirect packet to the client application.
+        /// </summary>
+        FILTER_PACKET_REDIRECT = 0x00000003
     }
 }

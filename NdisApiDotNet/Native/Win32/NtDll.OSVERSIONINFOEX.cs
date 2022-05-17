@@ -13,30 +13,29 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+internal static partial class NtDll
 {
-    internal static partial class NtDll
+    /// <summary>
+    /// The <see cref="OSVERSIONINFOEX"/> as defined in winnt.h.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct OSVERSIONINFOEX
     {
-        /// <summary>
-        /// The <see cref="OSVERSIONINFOEX"/> as defined in winnt.h.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        public struct OSVERSIONINFOEX
-        {
-            public uint dwOSVersionInfoSize;
-            public uint dwMajorVersion;
-            public uint dwMinorVersion;
-            public uint dwBuildNumber;
-            public uint dwPlatformId;
+        public uint dwOSVersionInfoSize;
+        public uint dwMajorVersion;
+        public uint dwMinorVersion;
+        public uint dwBuildNumber;
+        public uint dwPlatformId;
 
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-            public string szCSDVersion;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string szCSDVersion;
 
-            public ushort wServicePackMajor;
-            public ushort wServicePackMinor;
-            public ushort wSuiteMask;
-            public byte wProductType;
-            public byte wReserved;
-        }
+        public ushort wServicePackMajor;
+        public ushort wServicePackMinor;
+        public ushort wSuiteMask;
+        public byte wProductType;
+        public byte wReserved;
     }
 }

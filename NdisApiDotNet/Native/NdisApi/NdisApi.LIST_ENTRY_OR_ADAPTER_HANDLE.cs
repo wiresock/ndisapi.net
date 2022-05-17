@@ -13,24 +13,23 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
-{
-    public static partial class NdisApi
-    {
-        [StructLayout(LayoutKind.Explicit)]
-        public struct LIST_ENTRY_OR_ADAPTER_HANDLE
-        {
-            /// <summary>
-            /// The qlink entry.
-            /// </summary>
-            [FieldOffset(0)]
-            public LIST_ENTRY m_qLink;
+namespace NdisApiDotNet.Native;
 
-            /// <summary>
-            /// The adapter handle.
-            /// </summary>
-            [FieldOffset(0)]
-            public IntPtr m_hAdapter;
-        }
+public static partial class NdisApi
+{
+    [StructLayout(LayoutKind.Explicit)]
+    public struct LIST_ENTRY_OR_ADAPTER_HANDLE
+    {
+        /// <summary>
+        /// The qlink entry.
+        /// </summary>
+        [FieldOffset(0)]
+        public LIST_ENTRY m_qLink;
+
+        /// <summary>
+        /// The adapter handle.
+        /// </summary>
+        [FieldOffset(0)]
+        public IntPtr m_hAdapter;
     }
 }

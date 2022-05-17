@@ -13,25 +13,24 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    /// <summary>
+    /// Used for setting adapter mode.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct ADAPTER_MODE
     {
         /// <summary>
-        /// Used for setting adapter mode.
+        /// The adapter handle.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct ADAPTER_MODE
-        {
-            /// <summary>
-            /// The adapter handle.
-            /// </summary>
-            public IntPtr hAdapterHandle;
+        public IntPtr hAdapterHandle;
 
-            /// <summary>
-            /// The adapter flags.
-            /// </summary>
-            public MSTCP_FLAGS dwFlags;
-        }
+        /// <summary>
+        /// The adapter flags.
+        /// </summary>
+        public MSTCP_FLAGS dwFlags;
     }
 }

@@ -12,39 +12,38 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    /// <summary>
+    /// The IPv6 filter type.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct IP_V6_FILTER
     {
         /// <summary>
-        /// The IPv6 filter type.
+        /// Which of the fields below contain valid values and should be matched against the packet.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct IP_V6_FILTER
-        {
-            /// <summary>
-            /// Which of the fields below contain valid values and should be matched against the packet.
-            /// </summary>
-            public IP_V6_FILTER_FIELDS m_ValidFields;
+        public IP_V6_FILTER_FIELDS m_ValidFields;
 
-            /// <summary>
-            /// The IPv6 source address.
-            /// </summary>
-            public IP_ADDRESS_V6 m_SrcAddress;
+        /// <summary>
+        /// The IPv6 source address.
+        /// </summary>
+        public IP_ADDRESS_V6 m_SrcAddress;
 
-            /// <summary>
-            /// The IPv6 destination address.
-            /// </summary>
-            public IP_ADDRESS_V6 m_DestAddress;
+        /// <summary>
+        /// The IPv6 destination address.
+        /// </summary>
+        public IP_ADDRESS_V6 m_DestAddress;
 
-            /// <summary>
-            /// The next protocol.
-            /// </summary>
-            public byte m_Protocol;
+        /// <summary>
+        /// The next protocol.
+        /// </summary>
+        public byte m_Protocol;
 
-            internal byte Padding1;
-            internal byte Padding2;
-            internal byte Padding3;
-        }
+        internal byte Padding1;
+        internal byte Padding2;
+        internal byte Padding3;
     }
 }

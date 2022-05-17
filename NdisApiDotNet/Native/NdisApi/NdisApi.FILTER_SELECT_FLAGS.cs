@@ -11,34 +11,33 @@
 // ReSharper disable CheckNamespace
 // ReSharper disable IdentifierTypo
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    /// <summary>
+    /// The filter select flags.
+    /// </summary>
+    public enum FILTER_SELECT_FLAGS : uint
     {
         /// <summary>
-        /// The filter select flags.
+        /// Ethernet 802.3.
         /// </summary>
-        public enum FILTER_SELECT_FLAGS : uint
-        {
-            /// <summary>
-            /// Ethernet 802.3.
-            /// </summary>
-            ETH_802_3 = 0x00000001,
+        ETH_802_3 = 0x00000001,
 
-            /// <summary>
-            /// IPv4.
-            /// </summary>
-            IPV4 = 0x00000001,
+        /// <summary>
+        /// IPv4.
+        /// </summary>
+        IPV4 = 0x00000001,
 
-            /// <summary>
-            /// IPv6.
-            /// </summary>
-            IPV6 = 0x00000002,
+        /// <summary>
+        /// IPv6.
+        /// </summary>
+        IPV6 = 0x00000002,
 
-            /// <summary>
-            /// TCP/UDP.
-            /// </summary>
-            TCPUDP = 0x00000001
-        }
+        /// <summary>
+        /// TCP/UDP.
+        /// </summary>
+        TCPUDP = 0x00000001
     }
 }

@@ -13,35 +13,34 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    /// <summary>
+    /// The TCP/UDP filter.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct TCPUDP_FILTER
     {
         /// <summary>
-        /// The TCP/UDP filter.
+        /// Which of the fields below contain valid values and should be matched against the packet.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct TCPUDP_FILTER
-        {
-            /// <summary>
-            /// Which of the fields below contain valid values and should be matched against the packet.
-            /// </summary>
-            public TCPUDP_FILTER_FIELDS m_ValidFields;
+        public TCPUDP_FILTER_FIELDS m_ValidFields;
 
-            /// <summary>
-            /// The source port range.
-            /// </summary>
-            public PORT_RANGE m_SourcePort;
+        /// <summary>
+        /// The source port range.
+        /// </summary>
+        public PORT_RANGE m_SourcePort;
 
-            /// <summary>
-            /// The destination port range.
-            /// </summary>
-            public PORT_RANGE m_DestPort;
+        /// <summary>
+        /// The destination port range.
+        /// </summary>
+        public PORT_RANGE m_DestPort;
 
-            /// <summary>
-            /// The TCP flags combination.
-            /// </summary>
-            public byte m_TCPFlags;
-        }
+        /// <summary>
+        /// The TCP flags combination.
+        /// </summary>
+        public byte m_TCPFlags;
     }
 }

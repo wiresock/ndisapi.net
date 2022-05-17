@@ -12,22 +12,21 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
-{
-    public static partial class NdisApi
-    {
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct FAST_IO_WRITE_UNION_SPLIT
-        {
-            /// <summary>
-            /// The number of packets.
-            /// </summary>
-            public volatile ushort number_of_packets;
+namespace NdisApiDotNet.Native;
 
-            /// <summary>
-            /// The flag specifying whether write is in progress.
-            /// </summary>
-            public volatile ushort write_in_progress_flag;
-        }
+public static partial class NdisApi
+{
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct FAST_IO_WRITE_UNION_SPLIT
+    {
+        /// <summary>
+        /// The number of packets.
+        /// </summary>
+        public volatile ushort number_of_packets;
+
+        /// <summary>
+        /// The flag specifying whether write is in progress.
+        /// </summary>
+        public volatile ushort write_in_progress_flag;
     }
 }
