@@ -12,27 +12,26 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct FAST_IO_SECTION_HEADER
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct FAST_IO_SECTION_HEADER
-        {
-            /// <summary>
-            /// The write union.
-            /// </summary>
-            public FAST_IO_WRITE_UNION fast_io_write_union;
+        /// <summary>
+        /// The write union.
+        /// </summary>
+        public FAST_IO_WRITE_UNION fast_io_write_union;
 
-            /// <summary>
-            /// The flag specifying whether read is in progress.
-            /// </summary>
-            public volatile int read_in_progress_flag;
+        /// <summary>
+        /// The flag specifying whether read is in progress.
+        /// </summary>
+        public volatile int read_in_progress_flag;
 
-            /// <summary>
-            /// The size of <see cref="FAST_IO_SECTION_HEADER" />.
-            /// </summary>
-            public static int Size = Marshal.SizeOf<FAST_IO_SECTION_HEADER>();
-        }
+        /// <summary>
+        /// The size of <see cref="FAST_IO_SECTION_HEADER" />.
+        /// </summary>
+        public static int Size = Marshal.SizeOf<FAST_IO_SECTION_HEADER>();
     }
 }

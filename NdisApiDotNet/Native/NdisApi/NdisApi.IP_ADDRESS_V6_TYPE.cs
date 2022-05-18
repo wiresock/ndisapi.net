@@ -10,24 +10,23 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    /// <summary>
+    /// The type of IPv6 address.
+    /// </summary>
+    public enum IP_ADDRESS_V6_TYPE : uint
     {
         /// <summary>
-        /// The type of IPv6 address.
+        /// The IPv6 subnet type.
         /// </summary>
-        public enum IP_ADDRESS_V6_TYPE : uint
-        {
-            /// <summary>
-            /// The IPv6 subnet type.
-            /// </summary>
-            IP_SUBNET_V6_TYPE = 0x00000001,
+        IP_SUBNET_V6_TYPE = 0x00000001,
 
-            /// <summary>
-            /// The IPv6 range type.
-            /// </summary>
-            IP_RANGE_V6_TYPE = 0x00000002
-        }
+        /// <summary>
+        /// The IPv6 range type.
+        /// </summary>
+        IP_RANGE_V6_TYPE = 0x00000002
     }
 }

@@ -12,14 +12,13 @@ using System.Security;
 
 // ReSharper disable CheckNamespace
 
-namespace NdisApiDotNet.Native
-{
-    [SuppressUnmanagedCodeSecurity]
-    internal static partial class NtDll
-    {
-        private const string DllName = "ntdll.dll";
+namespace NdisApiDotNet.Native;
 
-        [DllImport(DllName, CharSet = CharSet.Unicode)]
-        public static extern int RtlGetVersion(ref OSVERSIONINFOEX lpVersionInformation);
-    }
+[SuppressUnmanagedCodeSecurity]
+internal static partial class NtDll
+{
+    private const string DllName = "ntdll.dll";
+
+    [DllImport(DllName, CharSet = CharSet.Unicode)]
+    public static extern int RtlGetVersion(ref OSVERSIONINFOEX lpVersionInformation);
 }

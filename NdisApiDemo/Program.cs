@@ -18,15 +18,11 @@ using PacketDotNet;
 
 namespace NdisApiDemo
 {
-    class Program
+    public class Program
     {
         private static void Main()
         {
             var filter = NdisApi.Open();
-            if (!filter.IsValid)
-            {
-                throw new ApplicationException("Cannot load driver.");
-            }
 
             Console.WriteLine($"Version: {filter.GetVersion()}.");
             Console.WriteLine($"Loaded driver: {filter.IsDriverLoaded()}.");

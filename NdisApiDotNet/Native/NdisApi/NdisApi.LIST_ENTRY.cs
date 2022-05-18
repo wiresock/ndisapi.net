@@ -14,18 +14,17 @@ using System.Runtime.InteropServices;
 // ReSharper disable CheckNamespace
 // ReSharper disable IdentifierTypo
 
-namespace NdisApiDotNet.Native
+namespace NdisApiDotNet.Native;
+
+public static partial class NdisApi
 {
-    public static partial class NdisApi
+    /// <summary>
+    /// The <see cref="LIST_ENTRY"/> as defined in ntdef.h.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct LIST_ENTRY
     {
-        /// <summary>
-        /// The <see cref="LIST_ENTRY"/> as defined in ntdef.h.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct LIST_ENTRY
-        {
-            public IntPtr Flink;
-            public IntPtr Blink;
-        }
+        public IntPtr Flink;
+        public IntPtr Blink;
     }
 }
