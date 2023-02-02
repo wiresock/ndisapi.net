@@ -29,6 +29,11 @@ public static partial class NdisApi
         public uint m_TableSize;
 
         /// <summary>
+        /// Padding to align STATIC_FILTER array on 8 byte boundary.
+        /// </summary>
+        internal uint m_Padding;
+
+        /// <summary>
         /// The <see cref="STATIC_FILTER" />s.
         /// </summary>
         public STATIC_FILTER m_StaticFilters; // This is an array of STATIC_FILTER, but this cannot be declared directly as it's a variable width.

@@ -42,5 +42,12 @@ public static partial class NdisApi
         /// The TCP flags combination.
         /// </summary>
         public byte m_TCPFlags;
+
+        /// <summary>
+        /// Padding to align STATIC_FILTER by 8 byte boundary.
+        /// </summary>
+        internal byte Padding1;
+        internal byte Padding2;
+        internal byte Padding3;
     }
 }
