@@ -9,10 +9,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NdisApiDotNet;
 
+#if NETCOREAPP
+[SkipLocalsInit]
+#endif
 internal sealed class PinnedManagedArrayAllocator<T> : IDisposable where T : struct
 {
     private readonly object _lock = new();
@@ -37,14 +41,14 @@ internal sealed class PinnedManagedArrayAllocator<T> : IDisposable where T : str
     /// <returns><see cref="IntPtr" />.</returns>
     public IntPtr AllocateArray(int length)
     {
-#if NET5_0_OR_GREATER
-        var array = GC.AllocateUninitializedArray<T>(length);
+#if NETCOREAPP
+        T[] array = GC.AllocateUninitializedArray<T>(length);
 #else
         var array = new T[length];
 #endif
 
         var gcHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
-        var ptr = gcHandle.AddrOfPinnedObject();
+        IntPtr ptr = gcHandle.AddrOfPinnedObject();
 
         lock (_lock)
         {
@@ -63,11 +67,11 @@ internal sealed class PinnedManagedArrayAllocator<T> : IDisposable where T : str
     {
         lock (_lock)
         {
-#if NET5_0_OR_GREATER
-            if (_ptrToGcHandles.Remove(arrayPointer, out var handle))
+#if NETCOREAPP
+            if (_ptrToGcHandles.Remove(arrayPointer, out GCHandle handle))
                 handle.Free();
 #else
-            if (_ptrToGcHandles.TryGetValue(arrayPointer, out var handle))
+            if (_ptrToGcHandles.TryGetValue(arrayPointer, out GCHandle handle))
                 handle.Free();
 
             _ptrToGcHandles.Remove(arrayPointer);
@@ -100,7 +104,7 @@ internal sealed class PinnedManagedArrayAllocator<T> : IDisposable where T : str
 
             if (_ptrToGcHandles != null)
             {
-                foreach (var ptrToGcHandle in _ptrToGcHandles)
+                foreach (KeyValuePair<IntPtr, GCHandle> ptrToGcHandle in _ptrToGcHandles)
                     ptrToGcHandle.Value.Free();
 
                 _ptrToGcHandles = null;

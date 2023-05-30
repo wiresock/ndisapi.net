@@ -40,7 +40,7 @@ public static partial class NdisApi
         public IN6_ADDR(IReadOnlyList<byte> byteArray)
             : this()
         {
-            if (byteArray.Count < 16 || byteArray.Count > 16)
+            if (byteArray.Count is < 16 or > 16)
             {
                 throw new ArgumentOutOfRangeException(nameof(byteArray));
             }

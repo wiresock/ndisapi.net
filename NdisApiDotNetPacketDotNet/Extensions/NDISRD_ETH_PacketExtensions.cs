@@ -27,8 +27,8 @@ public static class NDISRD_ETH_PacketExtensions
     {
         try
         {
-            var pinnedArray = ndisApi.GetPinnedArray(packet.Buffer);
-            return new EthernetPacket(new ByteArraySegment(pinnedArray, (int) NdisApiDotNet.Native.NdisApi.INTERMEDIATE_BUFFER.BufferOffset, ndisApi.MaxPacketSize));
+            byte[] pinnedArray = ndisApi.GetPinnedArray(packet.Buffer);
+            return new EthernetPacket(new ByteArraySegment(pinnedArray, (int)NdisApiDotNet.Native.NdisApi.INTERMEDIATE_BUFFER.BufferOffset, ndisApi.MaxPacketSize));
         }
         catch
         {

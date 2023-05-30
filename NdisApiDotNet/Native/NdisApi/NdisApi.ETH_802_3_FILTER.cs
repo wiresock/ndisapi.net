@@ -42,10 +42,7 @@ public static partial class NdisApi
         /// </summary>
         public ushort m_Protocol;
 
-        /// <summary>
-        /// The padding, this is currently unused.
-        /// </summary>
-        public ushort Padding;
+        private readonly ushort m_Padding;
 
         /// <summary>
         /// Gets the source address.
@@ -53,7 +50,7 @@ public static partial class NdisApi
         /// <returns><see cref="byte" />s.</returns>
         public byte[] GetSourceAddress()
         {
-            var bytes = new byte[ETHER_ADDR_LENGTH];
+            byte[] bytes = new byte[ETHER_ADDR_LENGTH];
 
             for (int i = 0; i < ETHER_ADDR_LENGTH; i++)
             {
@@ -69,7 +66,7 @@ public static partial class NdisApi
         /// <returns><see cref="byte" />s.</returns>
         public byte[] GetDestinationAddress()
         {
-            var bytes = new byte[ETHER_ADDR_LENGTH];
+            byte[] bytes = new byte[ETHER_ADDR_LENGTH];
 
             for (int i = 0; i < ETHER_ADDR_LENGTH; i++)
             {

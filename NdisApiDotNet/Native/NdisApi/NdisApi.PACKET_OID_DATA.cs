@@ -30,7 +30,7 @@ public static partial class NdisApi
         public IntPtr hAdapterHandle;
 
         /// <summary>
-        /// The oid.
+        /// The OID.
         /// </summary>
         public uint Oid;
 
@@ -66,8 +66,8 @@ public static partial class NdisApi
         /// <returns><see cref="byte" />s.</returns>
         public byte[] GetData()
         {
-            var dataSize = Length;
-            var data = new byte[dataSize];
+            uint dataSize = Length;
+            byte[] data = new byte[dataSize];
 
             for (int i = 0; i < dataSize; i++)
             {
@@ -99,7 +99,7 @@ public static partial class NdisApi
         {
             fixed (byte* d = Data)
             {
-                var c = (short*) d;
+                short* c = (short*) d;
                 *c = data;
             }
 
@@ -114,7 +114,7 @@ public static partial class NdisApi
         {
             fixed (byte* d = Data)
             {
-                var c = (ushort*) d;
+                ushort* c = (ushort*) d;
                 *c = data;
             }
 
@@ -129,7 +129,7 @@ public static partial class NdisApi
         {
             fixed (byte* d = Data)
             {
-                var c = (int*) d;
+                int* c = (int*) d;
                 *c = data;
             }
 
@@ -144,7 +144,7 @@ public static partial class NdisApi
         {
             fixed (byte* d = Data)
             {
-                var c = (uint*) d;
+                uint* c = (uint*) d;
                 *c = data;
             }
 
@@ -159,7 +159,7 @@ public static partial class NdisApi
         {
             fixed (byte* d = Data)
             {
-                var c = (long*) d;
+                long* c = (long*) d;
                 *c = data;
             }
 
@@ -174,7 +174,7 @@ public static partial class NdisApi
         {
             fixed (byte* d = Data)
             {
-                var c = (ulong*) d;
+                ulong* c = (ulong*) d;
                 *c = data;
             }
 

@@ -26,8 +26,8 @@ public static class IntermediateBufferExtensions
     {
         try
         {
-            var pinnedArray = ndisApi.GetPinnedArray(buffer);
-            return new EthernetPacket(new ByteArraySegment(pinnedArray, (int) NdisApiDotNet.Native.NdisApi.INTERMEDIATE_BUFFER.BufferOffset, ndisApi.MaxPacketSize));
+            byte[] pinnedArray = ndisApi.GetPinnedArray(buffer);
+            return new EthernetPacket(new ByteArraySegment(pinnedArray, (int)NdisApiDotNet.Native.NdisApi.INTERMEDIATE_BUFFER.BufferOffset, ndisApi.MaxPacketSize));
         }
         catch
         {

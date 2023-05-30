@@ -21,7 +21,7 @@ internal static class IPAddressExtensions
     /// </summary>
     /// <param name="ipAddress">The IP address.</param>
     /// <returns><see cref="uint" />.</returns>
-    internal static uint ToUInt32(this IPAddress ipAddress)
+    public static uint ToUInt32(this IPAddress ipAddress)
     {
         if (ipAddress.AddressFamily == AddressFamily.InterNetwork || ipAddress.IsIPv4MappedToIPv6)
             return BitConverter.ToUInt32(ipAddress.GetAddressBytes().Reverse().ToArray(), 0);
@@ -34,7 +34,7 @@ internal static class IPAddressExtensions
     /// </summary>
     /// <param name="in6Addr">The IPv6 addr.</param>
     /// <returns><see cref="IPAddress" />.</returns>
-    internal static IPAddress ToIPAddress(this Native.NdisApi.IN6_ADDR in6Addr)
+    public static IPAddress ToIPAddress(this Native.NdisApi.IN6_ADDR in6Addr)
     {
         return new IPAddress(new[]
         {
@@ -62,7 +62,7 @@ internal static class IPAddressExtensions
     /// </summary>
     /// <param name="in4Addr">The IPv4 address.</param>
     /// <returns><see cref="IPAddress" />.</returns>
-    internal static IPAddress ToIPAddress(this uint in4Addr)
+    public static IPAddress ToIPAddress(this uint in4Addr)
     {
         return new IPAddress(in4Addr);
     }
@@ -72,7 +72,7 @@ internal static class IPAddressExtensions
     /// </summary>
     /// <param name="ipAddress">The IP address.</param>
     /// <returns><see cref="Native.NdisApi.IN6_ADDR" />.</returns>
-    internal static Native.NdisApi.IN6_ADDR ToIN6_ADDR(this IPAddress ipAddress)
+    public static Native.NdisApi.IN6_ADDR ToIN6_ADDR(this IPAddress ipAddress)
     {
         return new Native.NdisApi.IN6_ADDR(ipAddress);
     }

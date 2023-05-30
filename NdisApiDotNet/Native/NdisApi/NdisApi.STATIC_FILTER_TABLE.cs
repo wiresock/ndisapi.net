@@ -28,15 +28,12 @@ public static partial class NdisApi
         /// </summary>
         public uint m_TableSize;
 
-        /// <summary>
-        /// Padding to align STATIC_FILTER array on 8 byte boundary.
-        /// </summary>
-        internal uint m_Padding;
+		private readonly uint m_Padding;
 
-        /// <summary>
-        /// The <see cref="STATIC_FILTER" />s.
-        /// </summary>
-        public STATIC_FILTER m_StaticFilters; // This is an array of STATIC_FILTER, but this cannot be declared directly as it's a variable width.
+		/// <summary>
+		/// The <see cref="STATIC_FILTER" />s.
+		/// </summary>
+		public STATIC_FILTER m_StaticFilters; // This is an array of STATIC_FILTER, but this cannot be declared directly as it's a variable width.
 
         /// <summary>
         /// Gets the <see cref="STATIC_FILTER" />s.
@@ -60,10 +57,10 @@ public static partial class NdisApi
         /// <returns><see cref="STATIC_FILTER" />s.</returns>
         public STATIC_FILTER[] GetStaticFilters()
         {
-            var staticFiltersSize = m_TableSize;
+            uint staticFiltersSize = m_TableSize;
 
             var staticFilters = new STATIC_FILTER[staticFiltersSize];
-            var staticFiltersPtr = StaticFilters;
+            STATIC_FILTER* staticFiltersPtr = StaticFilters;
 
             for (int i = 0; i < staticFiltersSize; i++)
             {
@@ -79,7 +76,7 @@ public static partial class NdisApi
         /// <param name="filters">The filters.</param>
         public void SetStaticFilters(STATIC_FILTER[] filters)
         {
-            var staticFiltersPtr = StaticFilters;
+            STATIC_FILTER* staticFiltersPtr = StaticFilters;
 
             for (int i = 0; i < filters.Length; i++)
             {

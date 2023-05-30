@@ -1,30 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net47;netstandard2.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Company>NT Kernel</Company>
     <Authors>NT Kernel</Authors>
     <Description>Windows Packet Filter's NdisApi for .NET.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <LangVersion>latest</LangVersion>
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\snetcfg.amd64.exe" />
-    <None Remove="Resources\snetcfg.i386.exe" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\snetcfg.amd64.exe" />
-    <EmbeddedResource Include="Resources\snetcfg.i386.exe" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Buffers" Version="4.5.1" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+    <PackageReference Include="System.Buffers" Version="4.5.1" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 
 </Project>

@@ -67,10 +67,10 @@ public static partial class NdisApi
         /// <returns><see cref="NDISRD_ETH_Packet" />s.</returns>
         public NDISRD_ETH_Packet[] GetPackets(uint packets = 0)
         {
-            var packetSize = packets == 0 ? dwPacketsSuccess : packets;
+            uint packetSize = packets == 0 ? dwPacketsSuccess : packets;
 
             var ndisrdEthPackets = new NDISRD_ETH_Packet[packetSize];
-            var packetsPtr = Packets;
+            NDISRD_ETH_Packet* packetsPtr = Packets;
 
             for (int i = 0; i < packetSize; i++)
             {
@@ -87,7 +87,7 @@ public static partial class NdisApi
         /// <param name="packets">The packets.</param>
         public void SetPackets(NDISRD_ETH_Packet[] packets)
         {
-            var packetsPtr = Packets;
+            NDISRD_ETH_Packet* packetsPtr = Packets;
 
             for (int i = 0; i < packets.Length; i++)
             {
