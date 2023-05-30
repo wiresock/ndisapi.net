@@ -1,4 +1,18 @@
-﻿[*.{cs,vb}]
+﻿[*.cs]
 
-# IDE0032: Use auto property
-dotnet_style_prefer_auto_properties = false:silent
+dotnet_sort_system_directives_first = true
+trim_trailing_whitespace = true
+
+csharp_space_after_cast = false
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_before_colon_in_inheritance_clause = true
+
+csharp_preserve_single_line_blocks = true:none
+csharp_prefer_static_local_function = true:suggestion
+
+csharp_style_var_for_built_in_types = never
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# CA2007: Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.CA2007.severity = suggestion

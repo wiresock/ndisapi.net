@@ -42,8 +42,8 @@ public static partial class NdisApi
         /// </summary>
         public byte m_Protocol;
 
-        internal byte Padding1;
-        internal byte Padding2;
-        internal byte Padding3;
+        private readonly byte m_Padding1;
+        private readonly byte m_Padding2;
+        private readonly byte m_Padding3;
     }
 }

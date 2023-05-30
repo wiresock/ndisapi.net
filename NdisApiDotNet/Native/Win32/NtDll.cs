@@ -17,8 +17,9 @@ namespace NdisApiDotNet.Native;
 [SuppressUnmanagedCodeSecurity]
 internal static partial class NtDll
 {
-    private const string DllName = "ntdll.dll";
+	private const string DllName = "ntdll.dll";
 
-    [DllImport(DllName, CharSet = CharSet.Unicode)]
-    public static extern int RtlGetVersion(ref OSVERSIONINFOEX lpVersionInformation);
+	[DllImport(DllName)]
+	[DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+	public static extern int RtlGetVersion(ref OSVERSIONINFOEX lpVersionInformation);
 }

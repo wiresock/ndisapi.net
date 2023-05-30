@@ -47,10 +47,10 @@ public static partial class NdisApi
         /// <returns><see cref="INTERMEDIATE_BUFFER" />s.</returns>
         public INTERMEDIATE_BUFFER*[] GetIntermediateBuffers(uint length = 0)
         {
-            var size = length == 0 ? fast_io_header.fast_io_write_union.split.number_of_packets : length;
+            uint size = length == 0 ? fast_io_header.fast_io_write_union.split.number_of_packets : length;
 
             var data = new INTERMEDIATE_BUFFER*[size];
-            var intermediateBufferPtr = IntermediateBuffers;
+            INTERMEDIATE_BUFFER* intermediateBufferPtr = IntermediateBuffers;
 
             for (int i = 0; i < size; i++)
             {
@@ -68,7 +68,7 @@ public static partial class NdisApi
         /// <returns><see cref="INTERMEDIATE_BUFFER_VARIABLE" />s.</returns>
         public INTERMEDIATE_BUFFER_VARIABLE*[] GetVariableIntermediateBuffers(int intermediateBufferSize, uint length = 0)
         {
-            var size = length == 0 ? fast_io_header.fast_io_write_union.split.number_of_packets : length;
+            uint size = length == 0 ? fast_io_header.fast_io_write_union.split.number_of_packets : length;
 
             var data = new INTERMEDIATE_BUFFER_VARIABLE*[size];
 

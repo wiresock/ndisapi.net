@@ -60,7 +60,7 @@ public static partial class NdisApi
 
         /// <summary>
         /// Receive packets sent from and to MSTCP and network interface.
-        /// The original packet is dropped.
+        /// The original packet is still delivered to the network.
         /// </summary>
         MSTCP_FLAG_LISTEN = MSTCP_FLAG_SENT_LISTEN | MSTCP_FLAG_RECV_LISTEN,
 

@@ -9,10 +9,8 @@
 
 using System;
 using System.Net.NetworkInformation;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using NdisApiDotNet.Native;
 
 namespace NdisApiDotNet;
 
@@ -58,7 +56,7 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     {
         get
         {
-            foreach (var b in PhysicalAddress.GetAddressBytes())
+            foreach (byte b in PhysicalAddress.GetAddressBytes())
             {
                 if (b != 0)
                     return true;
@@ -96,7 +94,7 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     /// <summary>
     /// Gets the packet event wait handle.
     /// </summary>
-    /// <remarks>This is only set if <see cref="SetPacketEvent" /> is called with a valid <see cref="WaitHandle"/>.</remarks>
+    /// <remarks>This is only set if <see cref="SetPacketEvent" /> is called with a valid <see cref="WaitHandle" />.</remarks>
     public WaitHandle WaitHandle { get; private set; }
 
     /// <summary>
@@ -106,7 +104,7 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     {
         if (NdisApi != null)
         {
-            foreach (var networkAdapter in NdisApi.GetNetworkAdapters())
+            foreach (NetworkAdapter networkAdapter in NdisApi.GetNetworkAdapters())
             {
                 if (networkAdapter.Equals(this))
                 {
@@ -141,7 +139,7 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
         if (waitHandle == null)
             return false;
 
-        var success = NdisApi?.SetPacketEvent(this, waitHandle) == true;
+        bool success = NdisApi?.SetPacketEvent(this, waitHandle) == true;
         WaitHandle = success && waitHandle.SafeWaitHandle.DangerousGetHandle() != IntPtr.Zero ? waitHandle : null;
         return success;
     }
@@ -152,7 +150,7 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     /// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
     public bool ResetPacketEvent()
     {
-        var success = NdisApi?.ResetPacketEvent(this) == true;
+        bool success = NdisApi?.ResetPacketEvent(this) == true;
         WaitHandle = null;
         return success;
     }
@@ -185,8 +183,8 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     /// <returns><see cref="string" />.</returns>
     private static string GetName(byte[] nameBytes)
     {
-        var name = Encoding.ASCII.GetString(nameBytes);
-        var i = name.IndexOf((char) 0);
+        string name = Encoding.ASCII.GetString(nameBytes);
+        int i = name.IndexOf((char)0);
         return i >= 0 ? name.Substring(0, i) : name;
     }
 
@@ -197,11 +195,7 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     /// <returns><see cref="string" />.</returns>
     private static string GetFriendlyName(byte[] nameBytes)
     {
-        var lpVersionInformation = new NtDll.OSVERSIONINFOEX();
-        lpVersionInformation.dwOSVersionInfoSize = (uint) Marshal.SizeOf(lpVersionInformation);
-        NtDll.RtlGetVersion(ref lpVersionInformation);
-
-        return ConvertAdapterName(nameBytes, 0, lpVersionInformation.dwPlatformId, lpVersionInformation.dwMajorVersion);
+        return ConvertAdapterName(nameBytes, 0);
     }
 
     /// <summary>
@@ -209,43 +203,20 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     /// </summary>
     /// <param name="adapterNameBytes">Bytes of the adapter name.</param>
     /// <param name="nameStart">The start of the name.</param>
-    /// <param name="platformId">The OS platform identifier.</param>
-    /// <param name="majorVersion">The major OS version.</param>
     /// <returns><see cref="string" />.</returns>
-    private static unsafe string ConvertAdapterName(byte[] adapterNameBytes, int nameStart, uint platformId, uint majorVersion)
+    private static unsafe string ConvertAdapterName(byte[] adapterNameBytes, int nameStart)
     {
         fixed (byte* adapterNamePtr = &adapterNameBytes[nameStart])
         {
-            var friendlyNameBytes = new byte[Native.NdisApi.ADAPTER_NAME_SIZE];
+            byte[] friendlyNameBytes = new byte[Native.NdisApi.ADAPTER_NAME_SIZE];
             string friendlyName = null;
-            var success = false;
 
             fixed (byte* friendlyNameFixedBytes = friendlyNameBytes)
             {
-                if (platformId == 2)
+                // Windows 2000 and up.
+                if (Native.NdisApi.ConvertWindows2000AdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint)friendlyNameBytes.Length))
                 {
-                    /*VER_PLATFORM_WIN32_NT*/
-
-                    if (majorVersion > 4)
-                    {
-                        // Windows 2000 or XP.
-                        success = Native.NdisApi.ConvertWindows2000AdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint) friendlyNameBytes.Length);
-                    }
-                    else if (majorVersion == 4)
-                    {
-                        // Windows NT 4.0.
-                        success = Native.NdisApi.ConvertWindowsNTAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint) friendlyNameBytes.Length);
-                    }
-                }
-                else
-                {
-                    // Windows 9x/ME.
-                    success = Native.NdisApi.ConvertWindows9xAdapterName(adapterNamePtr, friendlyNameFixedBytes, (uint) friendlyNameBytes.Length);
-                }
-
-                if (success)
-                {
-                    var indexOfZero = 0;
+                    int indexOfZero = 0;
                     while (indexOfZero < 256 && friendlyNameBytes[indexOfZero] != 0)
                     {
                         ++indexOfZero;
@@ -272,7 +243,7 @@ public class NetworkAdapter : IEquatable<NetworkAdapter>
     public override int GetHashCode()
     {
         // Copied from .NET Runtime, as .NET Framework has an implementation that quickly collides.
-        long l = (long) Handle;
-        return unchecked((int) l) ^ (int) (l >> 32);
+        long l = (long)Handle;
+        return unchecked((int)l) ^ (int)(l >> 32);
     }
 }
