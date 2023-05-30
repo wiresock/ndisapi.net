@@ -1254,9 +1254,9 @@ public unsafe class NdisApi : IDisposable
 	private static bool NdisApiDllExists()
 	{
 #if NETCOREAPP
-        string path = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "ndisapi.dll");
+		string path = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "ndisapi.dll");
 #else
-		string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ndisapi.dll");
+        string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ndisapi.dll");
 #endif
 		return File.Exists(path);
 	}
