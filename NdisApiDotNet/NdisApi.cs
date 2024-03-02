@@ -31,7 +31,13 @@ public unsafe class NdisApi : IDisposable
 {
 	private const int EthMRequestPacketSize = 256;
 
-	private readonly ArrayPool<IntPtr> _arrayPool;
+    public enum StringType
+    {
+        Ansi,
+        Unicode
+    }
+
+    private readonly ArrayPool<IntPtr> _arrayPool;
 	private readonly byte[] _driverNameBytes;
 	private readonly Native.NdisApi.ETH_M_REQUEST* _ethPacketsToAdapter;
 	private readonly Native.NdisApi.ETH_M_REQUEST* _ethPacketsToMstcp;
@@ -93,30 +99,33 @@ public unsafe class NdisApi : IDisposable
 		}
 	}
 
-	/// <summary>
-	/// Opens the filter driver.
-	/// </summary>
-	/// <param name="driverName">The name of the driver.</param>
-	/// <param name="maxPacketSize">The maximum packet size in bytes, defaults to <see cref="Native.NdisApi.MAX_ETHER_FRAME" />.</param>
-	/// <returns><see cref="NdisApi" />.</returns>
-	/// <exception cref="Exception">Missing NDIS DLL</exception>
-	public static NdisApi Open(string driverName = "NDISRD", int maxPacketSize = Native.NdisApi.MAX_ETHER_FRAME)
-	{
-		if (!NdisApiDllExists())
-			throw new DllNotFoundException("Missing NDIS DLL.");
+    /// <summary>
+    /// Opens the filter driver.
+    /// </summary>
+    /// <param name="driverName">The name of the driver.</param>
+    /// <param name="maxPacketSize">The maximum packet size in bytes, defaults to <see cref="Native.NdisApi.MAX_ETHER_FRAME" />.</param>
+    /// <param name="stringType">The type of string encoding to use, defaults to Unicode. Can be either Ansi or Unicode.</param>
+    /// <returns><see cref="NdisApi" />.</returns>
+    /// <exception cref="DllNotFoundException">Thrown when the NDIS DLL is missing.</exception>
+    /// <exception cref="Win32Exception">Thrown when the handle to the filter driver is invalid.</exception>
+    public static NdisApi Open(string driverName = "NDISRD", int maxPacketSize = Native.NdisApi.MAX_ETHER_FRAME, StringType stringType = StringType.Unicode)
+    {
+        if (!NdisApiDllExists())
+            throw new DllNotFoundException("Missing NDIS DLL.");
 
-		byte[] driverNameBytes = Encoding.GetEncoding("ISO-8859-1").GetBytes(driverName);
-		SafeFilterDriverHandle handle = Native.NdisApi.OpenFilterDriver(driverNameBytes);
-		if (handle.IsInvalid)
-			throw new Win32Exception(Marshal.GetLastWin32Error());
+        Encoding encoding = stringType == StringType.Unicode ? Encoding.Unicode : Encoding.GetEncoding("ISO-8859-1");
+        byte[] driverNameBytes = encoding.GetBytes(driverName);
+        SafeFilterDriverHandle handle = Native.NdisApi.OpenFilterDriver(driverNameBytes);
+        if (handle.IsInvalid)
+            throw new Win32Exception(Marshal.GetLastWin32Error());
 
-		return new NdisApi(handle, driverNameBytes, maxPacketSize);
-	}
+        return new NdisApi(handle, driverNameBytes, maxPacketSize);
+    }
 
-	/// <summary>
-	/// Closes the filter driver.
-	/// </summary>
-	public void Close()
+    /// <summary>
+    /// Closes the filter driver.
+    /// </summary>
+    public void Close()
 	{
 		Handle.Close();
 	}
