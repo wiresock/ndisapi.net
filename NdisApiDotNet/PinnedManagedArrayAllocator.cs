@@ -42,7 +42,7 @@ internal sealed class PinnedManagedArrayAllocator<T> : IDisposable where T : str
     public IntPtr AllocateArray(int length)
     {
 #if NETCOREAPP
-        T[] array = GC.AllocateUninitializedArray<T>(length);
+		T[] array = GC.AllocateUninitializedArray<T>(length);
 #else
         var array = new T[length];
 #endif
@@ -68,16 +68,17 @@ internal sealed class PinnedManagedArrayAllocator<T> : IDisposable where T : str
         lock (_lock)
         {
 #if NETCOREAPP
-            if (_ptrToGcHandles.Remove(arrayPointer, out GCHandle handle))
+			if (_ptrToGcHandles.Remove(arrayPointer, out GCHandle handle))
                 handle.Free();
 #else
-            if (_ptrToGcHandles.TryGetValue(arrayPointer, out GCHandle handle))
-                handle.Free();
-
-            _ptrToGcHandles.Remove(arrayPointer);
+			if (_ptrToGcHandles.TryGetValue(arrayPointer, out GCHandle handle))
+			{
+				_ptrToGcHandles.Remove(arrayPointer);
+				handle.Free();
+			}
 #endif
 
-            _ptrToArrays.Remove(arrayPointer);
+			_ptrToArrays.Remove(arrayPointer);
         }
     }
 

@@ -14,7 +14,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -25,19 +24,13 @@ using NdisApiDotNet.Native;
 namespace NdisApiDotNet;
 
 #if NETCOREAPP
-[SkipLocalsInit]
+[System.Runtime.CompilerServices.SkipLocalsInit]
 #endif
 public unsafe class NdisApi : IDisposable
 {
 	private const int EthMRequestPacketSize = 256;
 
-    public enum StringType
-    {
-        Ansi,
-        Unicode
-    }
-
-    private readonly ArrayPool<IntPtr> _arrayPool;
+	private readonly ArrayPool<IntPtr> _arrayPool;
 	private readonly byte[] _driverNameBytes;
 	private readonly Native.NdisApi.ETH_M_REQUEST* _ethPacketsToAdapter;
 	private readonly Native.NdisApi.ETH_M_REQUEST* _ethPacketsToMstcp;
@@ -65,7 +58,7 @@ public unsafe class NdisApi : IDisposable
 
 		Handle = handle;
 		MaxPacketSize = maxPacketSize;
-		IntermediateBufferSize = Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE.SizeOfHeader + maxPacketSize;
+		IntermediateBufferSize = Native.NdisApi.INTERMEDIATE_BUFFER.SizeOfHeader + maxPacketSize;
 	}
 
 	/// <summary>
@@ -97,35 +90,45 @@ public unsafe class NdisApi : IDisposable
 			foreach (Native.NdisApi.FAST_IO_SECTION* secondaryFastIOSection in _secondaryFastIOSections)
 				Marshal.FreeHGlobal((IntPtr)secondaryFastIOSection);
 		}
-	}
+    }
 
     /// <summary>
     /// Opens the filter driver.
     /// </summary>
     /// <param name="driverName">The name of the driver.</param>
+    /// <param name="useLegacyEncoding">If set to <c>true</c>, uses legacy driver name encoding.</param>
     /// <param name="maxPacketSize">The maximum packet size in bytes, defaults to <see cref="Native.NdisApi.MAX_ETHER_FRAME" />.</param>
-    /// <param name="stringType">The type of string encoding to use, defaults to Unicode. Can be either Ansi or Unicode.</param>
     /// <returns><see cref="NdisApi" />.</returns>
-    /// <exception cref="DllNotFoundException">Thrown when the NDIS DLL is missing.</exception>
-    /// <exception cref="Win32Exception">Thrown when the handle to the filter driver is invalid.</exception>
-    public static NdisApi Open(string driverName = "NDISRD", int maxPacketSize = Native.NdisApi.MAX_ETHER_FRAME, StringType stringType = StringType.Unicode)
+    public static NdisApi Open(string driverName, bool useLegacyEncoding, int maxPacketSize = Native.NdisApi.MAX_ETHER_FRAME)
     {
-        if (!NdisApiDllExists())
-            throw new DllNotFoundException("Missing NDIS DLL.");
-
-        Encoding encoding = stringType == StringType.Unicode ? Encoding.Unicode : Encoding.GetEncoding("ISO-8859-1");
-        byte[] driverNameBytes = encoding.GetBytes(driverName);
-        SafeFilterDriverHandle handle = Native.NdisApi.OpenFilterDriver(driverNameBytes);
-        if (handle.IsInvalid)
-            throw new Win32Exception(Marshal.GetLastWin32Error());
-
-        return new NdisApi(handle, driverNameBytes, maxPacketSize);
+        Encoding encoding = useLegacyEncoding ? Encoding.GetEncoding("ISO-8859-1") : null;
+        return Open(driverName, encoding, maxPacketSize);
     }
 
     /// <summary>
-    /// Closes the filter driver.
+    /// Opens the filter driver.
     /// </summary>
-    public void Close()
+    /// <param name="driverName">The name of the driver.</param>
+    /// <param name="driverNameEncoding">The driver name encoding.</param>
+    /// <param name="maxPacketSize">The maximum packet size in bytes, defaults to <see cref="Native.NdisApi.MAX_ETHER_FRAME" />.</param>
+    /// <returns><see cref="NdisApi" />.</returns>
+    public static NdisApi Open(string driverName = "NDISRD", Encoding driverNameEncoding = null, int maxPacketSize = Native.NdisApi.MAX_ETHER_FRAME)
+	{
+		if (!NdisApiDllExists())
+			throw new DllNotFoundException("Missing NDIS DLL.");
+
+		byte[] driverNameBytes = (driverNameEncoding ?? Encoding.Unicode).GetBytes(driverName);
+		SafeFilterDriverHandle handle = Native.NdisApi.OpenFilterDriver(driverNameBytes);
+		if (handle.IsInvalid)
+			throw new Win32Exception(Marshal.GetLastWin32Error());
+
+		return new NdisApi(handle, driverNameBytes, maxPacketSize);
+	}
+
+	/// <summary>
+	/// Closes the filter driver.
+	/// </summary>
+	public void Close()
 	{
 		Handle.Close();
 	}
@@ -159,12 +162,15 @@ public unsafe class NdisApi : IDisposable
 	public Version GetVersion(string fileName = "ndisrd")
 	{
 		string filePath = Path.Combine(Environment.SystemDirectory, @"drivers\" + fileName + ".sys");
-		if (!File.Exists(filePath))
-			return new Version(0, 0, 0, 0);
+        if (File.Exists(filePath))
+        {
+            var fileVersionInfo = FileVersionInfo.GetVersionInfo(filePath);
+			if (fileVersionInfo.FileVersion is { } fileVersion)
+                return new Version(fileVersion);
+        }
 
-		var fileVersionInfo = FileVersionInfo.GetVersionInfo(filePath);
-		return new Version(fileVersionInfo.FileVersion!);
-	}
+        return new Version(0, 0, 0, 0);
+    }
 
 	/// <summary>
 	/// Determines whether the driver has been loaded.
@@ -224,13 +230,16 @@ public unsafe class NdisApi : IDisposable
 	/// <returns><c>true</c> if installed, <c>false</c> otherwise.</returns>
 	public bool InstallDriver(string rootPath, string infFileName, string componentId)
 	{
-		string osName = string.Empty;
-		if (OperatingSystem.IsWindows10OrGreater())
-			osName = "win10";
+		string osName;
+
+        if (OperatingSystem.IsWindows10OrGreater())
+            osName = "win10";
 		else if (OperatingSystem.IsWindows8())
 			osName = "win8";
 		else if (OperatingSystem.IsWindows7())
-			osName = "win7";
+            osName = "win7";
+        else
+            return false;
 
 		string[] architectures;
 
@@ -317,7 +326,7 @@ public unsafe class NdisApi : IDisposable
 	/// <summary>
 	/// Sets the MTU decrement.
 	/// </summary>
-	/// <param name="mtuDecrement">The mtu decrement.</param>
+	/// <param name="mtuDecrement">The MTU decrement.</param>
 	/// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
 	public bool SetMtuDecrement(uint mtuDecrement)
 	{
@@ -368,19 +377,6 @@ public unsafe class NdisApi : IDisposable
 		foreach (NetworkAdapter networkAdapter in GetNetworkAdapters())
 		{
 			if (GetAdapterMode(networkAdapter, out Native.NdisApi.ADAPTER_MODE adapterMode) && adapterMode.dwFlags.Equals(flags))
-				yield return networkAdapter;
-		}
-	}
-
-	/// <summary>
-	/// Gets the bound network adapters.
-	/// </summary>
-	/// <returns><see cref="NetworkAdapter" />s.</returns>
-	public IEnumerable<NetworkAdapter> GetBoundNetworkAdapters()
-	{
-		foreach (NetworkAdapter networkAdapter in GetNetworkAdapters())
-		{
-			if (GetAdapterMode(networkAdapter, out Native.NdisApi.ADAPTER_MODE adapterMode) && adapterMode.dwFlags != 0)
 				yield return networkAdapter;
 		}
 	}
@@ -534,7 +530,7 @@ public unsafe class NdisApi : IDisposable
 	/// <returns><c>true</c> if successful, <c>false</c> otherwise.</returns>
 	public bool SendPacket(ref Native.NdisApi.ETH_REQUEST ethRequest)
 	{
-		var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE*)ethRequest.EthPacket.Buffer;
+		var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER*)ethRequest.EthPacket.Buffer;
 		return buffer->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND ? SendPacketToAdapter(ref ethRequest) : SendPacketToMstcp(ref ethRequest);
 	}
 
@@ -601,7 +597,7 @@ public unsafe class NdisApi : IDisposable
 
 		for (int i = 0; i < dwPacketsNum; i++)
 		{
-			var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE*)buffers[i];
+			var buffer = (Native.NdisApi.INTERMEDIATE_BUFFER*)buffers[i];
 
 			if (buffer->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
 				adapterBuffers[adapterBufferCount++] = buffers[i];
@@ -642,22 +638,40 @@ public unsafe class NdisApi : IDisposable
 		{
 			_ethPacketsToAdapter->dwPacketsSuccess = 0;
 			_ethPacketsToMstcp->dwPacketsSuccess = 0;
-			_ethPacketsToAdapter->dwPacketsNumber = 0;
-			_ethPacketsToMstcp->dwPacketsNumber = 0;
+			_ethPacketsToAdapter->dwPacketsNumber = EthMRequestPacketSize;
+			_ethPacketsToMstcp->dwPacketsNumber = EthMRequestPacketSize;
 			_ethPacketsToAdapter->hAdapterHandle = ethMRequest->hAdapterHandle;
 			_ethPacketsToMstcp->hAdapterHandle = ethMRequest->hAdapterHandle;
 
-			packets ??= ethMRequest->GetPackets();
+			Span<Native.NdisApi.NDISRD_ETH_Packet> packetsAsSpan;
+			int packetsLength;
 
-			for (int i = 0; i < packets.Length; i++)
+			if (packets == null)
 			{
-				IntPtr buffer = packets[i].Buffer;
-
-				if (((Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE*)buffer)->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
-					_ethPacketsToAdapter->Packets[_ethPacketsToAdapter->dwPacketsNumber++].Buffer = buffer;
-				else
-					_ethPacketsToMstcp->Packets[_ethPacketsToMstcp->dwPacketsNumber++].Buffer = buffer;
+				packetsAsSpan = ethMRequest->EthPackets;
+				packetsLength = (int) ethMRequest->dwPacketsSuccess;
 			}
+			else
+			{
+				packetsAsSpan = packets.AsSpan();
+				packetsLength = packets.Length;
+			}
+
+			Span<Native.NdisApi.NDISRD_ETH_Packet> adapterPackets = _ethPacketsToAdapter->EthPackets;
+			Span<Native.NdisApi.NDISRD_ETH_Packet> mstcpPackets = _ethPacketsToMstcp->EthPackets;
+
+			for (int i = 0; i < packetsLength; i++)
+			{
+				IntPtr buffer = packetsAsSpan[i].Buffer;
+
+				if (((Native.NdisApi.INTERMEDIATE_BUFFER*)buffer)->m_dwDeviceFlags == Native.NdisApi.PACKET_FLAG.PACKET_FLAG_ON_SEND)
+					adapterPackets[(int)_ethPacketsToAdapter->dwPacketsSuccess++].Buffer = buffer;
+				else
+					mstcpPackets[(int)_ethPacketsToMstcp->dwPacketsSuccess++].Buffer = buffer;
+			}
+
+			_ethPacketsToAdapter->dwPacketsNumber = _ethPacketsToAdapter->dwPacketsSuccess;
+			_ethPacketsToMstcp->dwPacketsNumber = _ethPacketsToMstcp->dwPacketsSuccess;
 
 			bool success = true;
 
@@ -996,15 +1010,6 @@ public unsafe class NdisApi : IDisposable
 	}
 
 	/// <summary>
-	/// Creates a new <see cref="Native.NdisApi.INTERMEDIATE_BUFFER" />.
-	/// </summary>
-	/// <returns><see cref="Native.NdisApi.INTERMEDIATE_BUFFER" />.</returns>
-	public Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE* CreateVariableIntermediateBuffer()
-	{
-		return (Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE*)_pinnedManagedArrayAllocator.AllocateArray(IntermediateBufferSize);
-	}
-
-	/// <summary>
 	/// Creates a new <see cref="Native.NdisApi.ETH_REQUEST" />.
 	/// </summary>
 	/// <remarks>The adapter handle still needs to be set.</remarks>
@@ -1029,17 +1034,16 @@ public unsafe class NdisApi : IDisposable
 		var ethMRequest = (Native.NdisApi.ETH_M_REQUEST*)pinnedPtr;
 		ethMRequest->dwPacketsNumber = packetCount;
 
-		var ndisrdEthPackets = new Native.NdisApi.NDISRD_ETH_Packet[packetCount];
-
+		Span<Native.NdisApi.NDISRD_ETH_Packet> packets = ethMRequest->EthPackets;
 		for (int i = 0; i < packetCount; i++)
 		{
-			ndisrdEthPackets[i] = new Native.NdisApi.NDISRD_ETH_Packet
+			IntPtr allocateArray = _pinnedManagedArrayAllocator.AllocateArray(IntermediateBufferSize);
+
+			packets[i] = new Native.NdisApi.NDISRD_ETH_Packet
 			{
-				Buffer = _pinnedManagedArrayAllocator.AllocateArray(IntermediateBufferSize)
+				Buffer = allocateArray
 			};
 		}
-
-		ethMRequest->SetPackets(ndisrdEthPackets);
 
 		return ethMRequest;
 	}
@@ -1066,11 +1070,8 @@ public unsafe class NdisApi : IDisposable
 		var staticFilterTable = (Native.NdisApi.STATIC_FILTER_TABLE*)pinnedPtr;
 		staticFilterTable->m_TableSize = filterCount;
 
-		var staticFilters = new Native.NdisApi.STATIC_FILTER[filterCount];
 		for (int i = 0; i < filterCount; i++)
-			staticFilters[i] = new Native.NdisApi.STATIC_FILTER();
-
-		staticFilterTable->SetStaticFilters(staticFilters);
+			staticFilterTable->StaticFilters[i] = new Native.NdisApi.STATIC_FILTER();
 
 		return staticFilterTable;
 	}
@@ -1081,16 +1082,6 @@ public unsafe class NdisApi : IDisposable
 	/// <param name="source">The source.</param>
 	/// <param name="destination">The destination.</param>
 	public void CloneObject(Native.NdisApi.INTERMEDIATE_BUFFER* source, Native.NdisApi.INTERMEDIATE_BUFFER* destination)
-	{
-		Kernel32.RtlMoveMemory((IntPtr)destination, (IntPtr)source, (uint)IntermediateBufferSize);
-	}
-
-	/// <summary>
-	/// Clones the specified object.
-	/// </summary>
-	/// <param name="source">The source.</param>
-	/// <param name="destination">The destination.</param>
-	public void CloneObject(Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE* source, Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE* destination)
 	{
 		Kernel32.RtlMoveMemory((IntPtr)destination, (IntPtr)source, (uint)IntermediateBufferSize);
 	}
@@ -1144,8 +1135,8 @@ public unsafe class NdisApi : IDisposable
 		destination->dwPacketsSuccess = source->dwPacketsSuccess;
 		destination->dwPacketsNumber = source->dwPacketsNumber;
 
-		Native.NdisApi.NDISRD_ETH_Packet[] requestPackets = source->GetPackets();
-		Native.NdisApi.NDISRD_ETH_Packet[] nextPackets = destination->GetPackets();
+		Span<Native.NdisApi.NDISRD_ETH_Packet> requestPackets = source->EthPackets;
+		Span<Native.NdisApi.NDISRD_ETH_Packet> nextPackets = destination->EthPackets;
 
 		for (int i = 0; i < source->dwPacketsNumber; i++)
 			Kernel32.RtlMoveMemory(nextPackets[i].Buffer, requestPackets[i].Buffer, (uint)IntermediateBufferSize);
@@ -1170,15 +1161,6 @@ public unsafe class NdisApi : IDisposable
 	}
 
 	/// <summary>
-	/// Disposes the specified <see cref="buffer" />.
-	/// </summary>
-	/// <param name="buffer">The buffer.</param>
-	public void DisposeObject(Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE* buffer)
-	{
-		_pinnedManagedArrayAllocator.FreeArray((IntPtr)buffer);
-	}
-
-	/// <summary>
 	/// Disposes the specified <see cref="request" />.
 	/// </summary>
 	/// <param name="request">The request.</param>
@@ -1194,7 +1176,7 @@ public unsafe class NdisApi : IDisposable
 	/// <param name="request">The request.</param>
 	public void DisposeObject(Native.NdisApi.ETH_M_REQUEST* request)
 	{
-		Native.NdisApi.NDISRD_ETH_Packet[] packets = request->GetPackets(Math.Max(request->dwPacketsNumber, request->dwPacketsSuccess));
+		Span<Native.NdisApi.NDISRD_ETH_Packet> packets = request->EthPackets;
 
 		for (int i = 0; i < packets.Length; i++)
 		{
@@ -1224,15 +1206,6 @@ public unsafe class NdisApi : IDisposable
 	}
 
 	/// <summary>
-	/// Zeroes the data of the specified <see cref="buffer" />.
-	/// </summary>
-	/// <param name="buffer">The buffer.</param>
-	public void ZeroObject(Native.NdisApi.INTERMEDIATE_BUFFER_VARIABLE* buffer)
-	{
-		Kernel32.RtlZeroMemory((IntPtr)buffer, IntermediateBufferSize);
-	}
-
-	/// <summary>
 	/// Zeroes the data of the specified <see cref="request" />.
 	/// </summary>
 	/// <param name="request">The request.</param>
@@ -1253,7 +1226,7 @@ public unsafe class NdisApi : IDisposable
 		request->dwPacketsSuccess = 0;
 		request->dwPacketsNumber = 0;
 
-		Kernel32.RtlZeroMemory((IntPtr)request + (int)Native.NdisApi.ETH_M_REQUEST.PacketsOffset, (int)(IntermediateBufferSize * request->dwPacketsNumber));
+		Kernel32.RtlZeroMemory((IntPtr)request + (int)Native.NdisApi.ETH_M_REQUEST.EthPacketOffset, (int)(IntermediateBufferSize * request->dwPacketsNumber));
 	}
 
 	/// <summary>
@@ -1262,11 +1235,7 @@ public unsafe class NdisApi : IDisposable
 	/// <returns><c>true</c> if it exists; otherwise, <c>false</c>.</returns>
 	private static bool NdisApiDllExists()
 	{
-#if NETCOREAPP
-		string path = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "ndisapi.dll");
-#else
-        string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ndisapi.dll");
-#endif
+		string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ndisapi.dll");
 		return File.Exists(path);
 	}
 }

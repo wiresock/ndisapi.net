@@ -18,7 +18,7 @@ using Microsoft.Win32.SafeHandles;
 namespace NdisApiDotNet.Native;
 
 [SuppressUnmanagedCodeSecurity]
-public static partial class NdisApi
+public static unsafe partial class NdisApi
 {
     /// <summary>
     /// The file name of the NDIS API DLL.
@@ -82,10 +82,10 @@ public static partial class NdisApi
     public static extern bool ReadPacket(SafeFilterDriverHandle hOpen, ref ETH_REQUEST packet);
 
     [DllImport(DllName)]
-    public static extern unsafe bool SendPacketsToMstcp(SafeFilterDriverHandle hOpen, ETH_M_REQUEST* packets);
+    public static extern bool SendPacketsToMstcp(SafeFilterDriverHandle hOpen, ETH_M_REQUEST* packets);
 
     [DllImport(DllName)]
-    public static extern unsafe bool SendPacketsToAdapter(SafeFilterDriverHandle hOpen, ETH_M_REQUEST* packets);
+    public static extern bool SendPacketsToAdapter(SafeFilterDriverHandle hOpen, ETH_M_REQUEST* packets);
 
     [DllImport(DllName)]
     public static extern bool SendPacketsToAdaptersUnsorted(SafeFilterDriverHandle hOpen, IntPtr[] packets, uint dwPacketsNum, ref uint pdwPacketsSuccess);
@@ -97,7 +97,7 @@ public static partial class NdisApi
     public static extern bool ReadPacketsUnsorted(SafeFilterDriverHandle hOpen, IntPtr[] packets, uint dwPacketsNum, ref uint pdwPacketsSuccess);
 
     [DllImport(DllName)]
-    public static extern unsafe bool ReadPackets(SafeFilterDriverHandle hOpen, ETH_M_REQUEST* packets);
+    public static extern bool ReadPackets(SafeFilterDriverHandle hOpen, ETH_M_REQUEST* packets);
 
     [DllImport(DllName)]
     public static extern bool SetAdapterMode(SafeFilterDriverHandle hOpen, ref ADAPTER_MODE mode);
@@ -127,7 +127,7 @@ public static partial class NdisApi
     public static extern bool NdisrdRequest(SafeFilterDriverHandle hOpen, ref PACKET_OID_DATA oidData, bool set);
 
     [DllImport(DllName)]
-    public static extern unsafe bool NdisrdRequest(SafeFilterDriverHandle hOpen, PACKET_OID_DATA* oidData, bool set);
+    public static extern bool NdisrdRequest(SafeFilterDriverHandle hOpen, PACKET_OID_DATA* oidData, bool set);
 
     [DllImport(DllName)]
     public static extern bool GetRasLinks(SafeFilterDriverHandle hOpen, IntPtr hAdapter, IntPtr pLinks);
@@ -139,7 +139,7 @@ public static partial class NdisApi
     public static extern bool GetHwPacketFilter(SafeFilterDriverHandle hOpen, IntPtr hAdapter, ref NDIS_PACKET_TYPE pFilter);
 
     [DllImport(DllName)]
-    public static extern unsafe bool SetPacketFilterTable(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE* pFilterList);
+    public static extern bool SetPacketFilterTable(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE* pFilterList);
 
     [DllImport(DllName)]
     public static extern bool ResetPacketFilterTable(SafeFilterDriverHandle hOpen);
@@ -148,10 +148,10 @@ public static partial class NdisApi
     public static extern bool GetPacketFilterTableSize(SafeFilterDriverHandle hOpen, ref uint pdwTableSize);
 
     [DllImport(DllName)]
-    public static extern unsafe bool GetPacketFilterTable(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE* pFilterList);
+    public static extern bool GetPacketFilterTable(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE* pFilterList);
 
     [DllImport(DllName)]
-    public static extern unsafe bool GetPacketFilterTableResetStats(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE* pFilterList);
+    public static extern bool GetPacketFilterTableResetStats(SafeFilterDriverHandle hOpen, STATIC_FILTER_TABLE* pFilterList);
 
     [DllImport(DllName)]
     public static extern uint GetMTUDecrement();
@@ -172,17 +172,17 @@ public static partial class NdisApi
     public static extern uint GetBytesReturned(SafeFilterDriverHandle hOpen);
 
     [DllImport(DllName)]
-    public static extern unsafe bool ConvertWindows2000AdapterName(byte* szAdapterName, byte* szUserFriendlyName, uint dwUserFriendlyNameLength);
+    public static extern bool ConvertWindows2000AdapterName(byte* szAdapterName, byte* szUserFriendlyName, uint dwUserFriendlyNameLength);
 
     [DllImport(DllName)]
-    public static extern unsafe bool ConvertWindows9xAdapterName(byte* szAdapterName, byte* szUserFriendlyName, uint dwUserFriendlyNameLength);
+    public static extern bool ConvertWindows9xAdapterName(byte* szAdapterName, byte* szUserFriendlyName, uint dwUserFriendlyNameLength);
 
     [DllImport(DllName)]
-    public static extern unsafe bool ConvertWindowsNTAdapterName(byte* szAdapterName, byte* szUserFriendlyName, uint dwUserFriendlyNameLength);
+    public static extern bool ConvertWindowsNTAdapterName(byte* szAdapterName, byte* szUserFriendlyName, uint dwUserFriendlyNameLength);
 
     [DllImport(DllName)]
-    public static extern unsafe bool InitializeFastIo(SafeFilterDriverHandle hOpen, FAST_IO_SECTION* pFastIo, uint dwSize);
+    public static extern bool InitializeFastIo(SafeFilterDriverHandle hOpen, FAST_IO_SECTION* pFastIo, uint dwSize);
 
     [DllImport(DllName)]
-    public static extern unsafe bool AddSecondaryFastIo(SafeFilterDriverHandle hOpen, FAST_IO_SECTION* pFastIo, uint dwSize);
+    public static extern bool AddSecondaryFastIo(SafeFilterDriverHandle hOpen, FAST_IO_SECTION* pFastIo, uint dwSize);
 }
