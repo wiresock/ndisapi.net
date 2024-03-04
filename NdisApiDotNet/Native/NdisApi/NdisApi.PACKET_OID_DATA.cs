@@ -8,7 +8,6 @@
 // ----------------------------------------------
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
@@ -43,11 +42,6 @@ public static partial class NdisApi
         /// The data.
         /// </summary>
         public fixed byte Data[1];
-
-        /// <summary>
-        /// Gets the pointer to the data.
-        /// </summary>
-        public byte* DataPointer => (byte*) Unsafe.AsPointer(ref Data[0]);
 
         /// <summary>
         /// Gets or sets the <see cref="byte" /> at the specified index.
@@ -182,7 +176,7 @@ public static partial class NdisApi
         }
 
         /// <summary>
-        /// The size of <see cref="PACKET_OID_DATA" /> without the <see cref="DataPointer" />
+        /// The size of <see cref="PACKET_OID_DATA" /> without the <see cref="Data" />
         /// </summary>
         public static int SizeOfHeader = Marshal.SizeOf<PACKET_OID_DATA>() - 1;
     }

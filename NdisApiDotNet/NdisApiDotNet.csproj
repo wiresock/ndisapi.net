@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0;net7.0;net8.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Company>NT Kernel</Company>
     <Authors>NT Kernel</Authors>
@@ -11,8 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Buffers" Version="4.5.1" Condition="$(TargetFramework.StartsWith('net4'))" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <PackageReference Include="System.Memory" Version="4.5.5" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 
 </Project>

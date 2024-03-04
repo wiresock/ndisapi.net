@@ -7,7 +7,7 @@
 // </copyright>
 // ----------------------------------------------
 
-using System.Runtime.CompilerServices;
+using System;
 using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
@@ -21,7 +21,7 @@ public static partial class NdisApi
     /// The static filters table to be passed to WinPkFilter driver.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public unsafe struct STATIC_FILTER_TABLE
+    public struct STATIC_FILTER_TABLE
     {
         /// <summary>
         /// The number of <see cref="STATIC_FILTER" /> entries.
@@ -31,16 +31,29 @@ public static partial class NdisApi
 		private readonly uint m_Padding;
 
 		/// <summary>
-		/// The <see cref="STATIC_FILTER" />s.
+		/// Gets the first <see cref="STATIC_FILTER" />s.
 		/// </summary>
 		public STATIC_FILTER m_StaticFilters; // This is an array of STATIC_FILTER, but this cannot be declared directly as it's a variable width.
 
         /// <summary>
         /// Gets the <see cref="STATIC_FILTER" />s.
         /// </summary>
-        public STATIC_FILTER* StaticFilters => (STATIC_FILTER*) Unsafe.AsPointer(ref m_StaticFilters);
+        public unsafe Span<STATIC_FILTER> StaticFilters
+		{
+			get
+			{
+#if NETCOREAPP
+				return MemoryMarshal.CreateSpan(ref m_StaticFilters, (int)m_TableSize);
+#else
+				fixed (STATIC_FILTER* staticFilter = &m_StaticFilters)
+				{
+					return new Span<STATIC_FILTER>(staticFilter, (int)m_TableSize);
+				}
+#endif
+			}
+		}
 
-        /// <summary>
+		/// <summary>
         /// Gets or sets the <see cref="STATIC_FILTER" /> at the specified index.
         /// </summary>
         /// <param name="index">The index.</param>
@@ -49,41 +62,6 @@ public static partial class NdisApi
         {
             get => StaticFilters[index];
             set => StaticFilters[index] = value;
-        }
-
-        /// <summary>
-        /// Gets the static filters.
-        /// </summary>
-        /// <returns><see cref="STATIC_FILTER" />s.</returns>
-        public STATIC_FILTER[] GetStaticFilters()
-        {
-            uint staticFiltersSize = m_TableSize;
-
-            var staticFilters = new STATIC_FILTER[staticFiltersSize];
-            STATIC_FILTER* staticFiltersPtr = StaticFilters;
-
-            for (int i = 0; i < staticFiltersSize; i++)
-            {
-                staticFilters[i] = staticFiltersPtr[i];
-            }
-
-            return staticFilters;
-        }
-
-        /// <summary>
-        /// Sets the static filters.
-        /// </summary>
-        /// <param name="filters">The filters.</param>
-        public void SetStaticFilters(STATIC_FILTER[] filters)
-        {
-            STATIC_FILTER* staticFiltersPtr = StaticFilters;
-
-            for (int i = 0; i < filters.Length; i++)
-            {
-                staticFiltersPtr[i] = filters[i];
-            }
-
-            m_TableSize = (uint) filters.Length;
         }
 
         /// <summary>

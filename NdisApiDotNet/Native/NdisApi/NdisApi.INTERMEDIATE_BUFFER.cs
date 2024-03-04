@@ -8,7 +8,6 @@
 // ----------------------------------------------
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // ReSharper disable InconsistentNaming
@@ -69,33 +68,28 @@ public static partial class NdisApi
         /// </summary>
         public IntPtr AdapterHandle
         {
-            get => m_qLink_hAdapter.m_hAdapter;
+			get => m_qLink_hAdapter.m_hAdapter;
             set => m_qLink_hAdapter.m_hAdapter = value;
         }
 
-        /// <summary>
-        /// Gets the data buffer.
-        /// </summary>
-        public byte* Buffer => (byte*) Unsafe.AsPointer(ref m_IBuffer[0]);
+		/// <summary>
+		/// The offset of <see cref="m_IBuffer" />.
+		/// </summary>
+		public static IntPtr BufferOffset = Marshal.OffsetOf(typeof(INTERMEDIATE_BUFFER), nameof(m_IBuffer));
 
         /// <summary>
-        /// Gets the reserved values.
-        /// </summary>
-        public uint* Reserved => (uint*) Unsafe.AsPointer(ref m_Reserved[0]);
-
-        /// <summary>
-        /// The offset of <see cref="Buffer" />.
-        /// </summary>
-        public static IntPtr BufferOffset = Marshal.OffsetOf(typeof(INTERMEDIATE_BUFFER), nameof(m_IBuffer));
-
-        /// <summary>
-        /// The offset of <see cref="Reserved" />.
+        /// The offset of <see cref="m_Reserved" />.
         /// </summary>
         public static IntPtr ReservedOffset = Marshal.OffsetOf(typeof(INTERMEDIATE_BUFFER), nameof(m_Reserved));
 
         /// <summary>
         /// The size of <see cref="INTERMEDIATE_BUFFER" />.
         /// </summary>
-        public static int Size = Marshal.SizeOf<INTERMEDIATE_BUFFER>();
-    }
+        public static int Size = sizeof(INTERMEDIATE_BUFFER);
+
+		/// <summary>
+		/// The size of <see cref="INTERMEDIATE_BUFFER"/> minus <see cref="m_IBuffer"/>.
+		/// </summary>
+		public static int SizeOfHeader = Size - MAX_ETHER_FRAME;
+	}
 }
