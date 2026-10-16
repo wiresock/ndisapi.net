@@ -117,6 +117,10 @@ public unsafe class NdisApi : IDisposable
 		if (!NdisApiDllExists())
 			throw new DllNotFoundException("Missing NDIS DLL.");
 
+		// Encode the terminator with the name so both Unicode and legacy DLLs receive a native string.
+		if (driverName != null && !driverName.EndsWith("\0", StringComparison.Ordinal))
+			driverName += '\0';
+
 		byte[] driverNameBytes = (driverNameEncoding ?? Encoding.Unicode).GetBytes(driverName);
 		SafeFilterDriverHandle handle = Native.NdisApi.OpenFilterDriver(driverNameBytes);
 		if (handle.IsInvalid)
